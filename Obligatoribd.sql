@@ -1,12 +1,26 @@
+
 USE ObligatorioBd;
 
 -- ==========================
 -- TABLAS BASE
 -- ==========================
+
+
 CREATE TABLE facultad(
   id_facultad INT PRIMARY KEY,
   nombre_facultad VARCHAR(50)
 );
+CREATE TABLE participante (
+ ci INT PRIMARY KEY,
+  nombre VARCHAR(50),
+  apellido VARCHAR(50),
+  email VARCHAR(50)
+);
+CREATE TABLE login (
+   correo VARCHAR(50) PRIMARY KEY,
+   contrasenia VARCHAR(100)
+);
+
 
 CREATE TABLE edificio(
   nombre_edificio VARCHAR(50) PRIMARY KEY,
