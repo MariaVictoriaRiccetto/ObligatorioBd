@@ -949,7 +949,7 @@
     <schema id="299" parent="1" name="obligatoriobd">
       <AutoIntrospectionLevel>3</AutoIntrospectionLevel>
       <LastIntrospectionLevel>3</LastIntrospectionLevel>
-      <LastIntrospectionLocalTimestamp>2025-11-13.12:17:23</LastIntrospectionLocalTimestamp>
+      <LastIntrospectionLocalTimestamp>2025-11-13.12:20:42</LastIntrospectionLocalTimestamp>
       <CollationName>utf8mb4_0900_ai_ci</CollationName>
     </schema>
     <user id="300" parent="1" name="mysql.infoschema">

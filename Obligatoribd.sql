@@ -21,7 +21,6 @@ CREATE TABLE login (
    contrasenia VARCHAR(100)
 );
 
-
 CREATE TABLE edificio(
   nombre_edificio VARCHAR(50) PRIMARY KEY,
   direccion VARCHAR(50),
@@ -179,7 +178,7 @@ INSERT INTO turno VALUES
 
 INSERT INTO reserva VALUES
 (1, 'sala 1','Sacré Cœur', '2025-10-05', 1, 'finalizada'),
-(2, 'sala 2','Sacré Cœur', '2025-10-05', 2, 'finalizada'),
+(2, 'sala 2','Sacré Coeur', '2025-10-05', 2, 'finalizada'),
 (3, 'sala 3','Sacré Cœur', '2025-10-05', 3, 'cancelada'),
 (4, 'sala 1','Sacré Cœur', '2025-10-06', 4, 'cancelada'),
 (5, 'sala 12','Semprun', '2025-10-06', 5, 'sin asistencia'),
@@ -193,3 +192,13 @@ INSERT INTO reserva VALUES
 (13, 'sala 8','San Jose', '2025-10-09', 13, 'activa'),
 (14, 'sala 3','Sacré Cœur', '2025-10-09', 14, 'activa'),
 (15, 'sala 7','San Jose', '2025-10-09', 15, 'cancelada');
+
+-- ==========================
+-- CONSULTAS
+-- ==========================
+
+select s.nombre_sala, count(*) as cantidad_reservas
+from reserva r
+join sala s on r.nombre_sala = s.nombre_sala
+group by s.nombre_sala
+order by cantidad_reservas desc;
