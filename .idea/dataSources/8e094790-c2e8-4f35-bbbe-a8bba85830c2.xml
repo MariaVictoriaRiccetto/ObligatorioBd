@@ -1002,294 +1002,384 @@
       <Engine>InnoDB</Engine>
       <CollationName>utf8mb4_0900_ai_ci</CollationName>
     </table>
-    <table id="311" parent="299" name="sala">
+    <table id="311" parent="299" name="reserva_participante">
       <DetailsLevel>3</DetailsLevel>
       <Engine>InnoDB</Engine>
       <CollationName>utf8mb4_0900_ai_ci</CollationName>
     </table>
-    <table id="312" parent="299" name="turno">
+    <table id="312" parent="299" name="sala">
       <DetailsLevel>3</DetailsLevel>
       <Engine>InnoDB</Engine>
       <CollationName>utf8mb4_0900_ai_ci</CollationName>
     </table>
-    <column id="313" parent="304" name="nombre_edificio">
+    <table id="313" parent="299" name="sancion_participante">
+      <DetailsLevel>3</DetailsLevel>
+      <Engine>InnoDB</Engine>
+      <CollationName>utf8mb4_0900_ai_ci</CollationName>
+    </table>
+    <table id="314" parent="299" name="turno">
+      <DetailsLevel>3</DetailsLevel>
+      <Engine>InnoDB</Engine>
+      <CollationName>utf8mb4_0900_ai_ci</CollationName>
+    </table>
+    <column id="315" parent="304" name="nombre_edificio">
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StoredType>varchar(50)|0s</StoredType>
     </column>
-    <column id="314" parent="304" name="direccion">
+    <column id="316" parent="304" name="direccion">
       <Position>2</Position>
       <StoredType>varchar(50)|0s</StoredType>
     </column>
-    <column id="315" parent="304" name="departamento">
+    <column id="317" parent="304" name="departamento">
       <Position>3</Position>
       <StoredType>varchar(20)|0s</StoredType>
     </column>
-    <index id="316" parent="304" name="PRIMARY">
+    <index id="318" parent="304" name="PRIMARY">
       <ColNames>nombre_edificio</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <key id="317" parent="304" name="PRIMARY">
+    <key id="319" parent="304" name="PRIMARY">
       <NameSurrogate>1</NameSurrogate>
       <Primary>1</Primary>
       <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>
     </key>
-    <column id="318" parent="305" name="id_facultad">
+    <column id="320" parent="305" name="id_facultad">
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StoredType>int|0s</StoredType>
     </column>
-    <column id="319" parent="305" name="nombre_facultad">
+    <column id="321" parent="305" name="nombre_facultad">
       <Position>2</Position>
       <StoredType>varchar(50)|0s</StoredType>
     </column>
-    <index id="320" parent="305" name="PRIMARY">
+    <index id="322" parent="305" name="PRIMARY">
       <ColNames>id_facultad</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <key id="321" parent="305" name="PRIMARY">
+    <key id="323" parent="305" name="PRIMARY">
       <NameSurrogate>1</NameSurrogate>
       <Primary>1</Primary>
       <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>
     </key>
-    <column id="322" parent="306" name="correo">
+    <column id="324" parent="306" name="correo">
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StoredType>varchar(50)|0s</StoredType>
     </column>
-    <column id="323" parent="306" name="contrasenia">
+    <column id="325" parent="306" name="contrasenia">
       <Position>2</Position>
       <StoredType>varchar(100)|0s</StoredType>
     </column>
-    <index id="324" parent="306" name="PRIMARY">
+    <index id="326" parent="306" name="PRIMARY">
       <ColNames>correo</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <key id="325" parent="306" name="PRIMARY">
+    <key id="327" parent="306" name="PRIMARY">
       <NameSurrogate>1</NameSurrogate>
       <Primary>1</Primary>
       <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>
     </key>
-    <column id="326" parent="307" name="ci">
+    <column id="328" parent="307" name="ci">
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StoredType>int|0s</StoredType>
     </column>
-    <column id="327" parent="307" name="nombre">
+    <column id="329" parent="307" name="nombre">
       <Position>2</Position>
       <StoredType>varchar(50)|0s</StoredType>
     </column>
-    <column id="328" parent="307" name="apellido">
+    <column id="330" parent="307" name="apellido">
       <Position>3</Position>
       <StoredType>varchar(50)|0s</StoredType>
     </column>
-    <column id="329" parent="307" name="email">
+    <column id="331" parent="307" name="email">
       <Position>4</Position>
       <StoredType>varchar(50)|0s</StoredType>
     </column>
-    <index id="330" parent="307" name="PRIMARY">
+    <index id="332" parent="307" name="PRIMARY">
       <ColNames>ci</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <key id="331" parent="307" name="PRIMARY">
+    <key id="333" parent="307" name="PRIMARY">
       <NameSurrogate>1</NameSurrogate>
       <Primary>1</Primary>
       <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>
     </key>
-    <column id="332" parent="308" name="id_alumno_programa">
+    <column id="334" parent="308" name="id_alumno_programa">
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StoredType>int|0s</StoredType>
     </column>
-    <column id="333" parent="308" name="ci_participante">
+    <column id="335" parent="308" name="ci_participante">
       <Position>2</Position>
       <StoredType>int|0s</StoredType>
     </column>
-    <column id="334" parent="308" name="nombre_programa">
+    <column id="336" parent="308" name="nombre_programa">
       <Position>3</Position>
       <StoredType>varchar(50)|0s</StoredType>
     </column>
-    <column id="335" parent="308" name="rol">
+    <column id="337" parent="308" name="rol">
       <Position>4</Position>
       <StoredType>varchar(15)|0s</StoredType>
     </column>
-    <foreign-key id="336" parent="308" name="participante_programa_academico_ibfk_1">
+    <foreign-key id="338" parent="308" name="participante_programa_academico_ibfk_1">
       <ColNames>ci_participante</ColNames>
       <RefColNames>ci</RefColNames>
       <RefTableName>participante</RefTableName>
     </foreign-key>
-    <foreign-key id="337" parent="308" name="participante_programa_academico_ibfk_2">
+    <foreign-key id="339" parent="308" name="participante_programa_academico_ibfk_2">
       <ColNames>nombre_programa</ColNames>
       <RefColNames>nombre_programa</RefColNames>
       <RefTableName>programa_academico</RefTableName>
     </foreign-key>
-    <index id="338" parent="308" name="PRIMARY">
+    <index id="340" parent="308" name="PRIMARY">
       <ColNames>id_alumno_programa</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <index id="339" parent="308" name="ci_participante">
+    <index id="341" parent="308" name="ci_participante">
       <ColNames>ci_participante</ColNames>
       <Type>btree</Type>
     </index>
-    <index id="340" parent="308" name="nombre_programa">
+    <index id="342" parent="308" name="nombre_programa">
       <ColNames>nombre_programa</ColNames>
       <Type>btree</Type>
     </index>
-    <key id="341" parent="308" name="PRIMARY">
+    <key id="343" parent="308" name="PRIMARY">
       <NameSurrogate>1</NameSurrogate>
       <Primary>1</Primary>
       <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>
     </key>
-    <column id="342" parent="309" name="nombre_programa">
+    <column id="344" parent="309" name="nombre_programa">
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StoredType>varchar(50)|0s</StoredType>
     </column>
-    <column id="343" parent="309" name="id_facultad">
+    <column id="345" parent="309" name="id_facultad">
       <Position>2</Position>
       <StoredType>int|0s</StoredType>
     </column>
-    <column id="344" parent="309" name="tipo">
+    <column id="346" parent="309" name="tipo">
       <Position>3</Position>
       <StoredType>varchar(50)|0s</StoredType>
     </column>
-    <foreign-key id="345" parent="309" name="programa_academico_ibfk_1">
+    <foreign-key id="347" parent="309" name="programa_academico_ibfk_1">
       <ColNames>id_facultad</ColNames>
       <RefColNames>id_facultad</RefColNames>
       <RefTableName>facultad</RefTableName>
     </foreign-key>
-    <index id="346" parent="309" name="PRIMARY">
+    <index id="348" parent="309" name="PRIMARY">
       <ColNames>nombre_programa</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <index id="347" parent="309" name="id_facultad">
+    <index id="349" parent="309" name="id_facultad">
       <ColNames>id_facultad</ColNames>
       <Type>btree</Type>
     </index>
-    <key id="348" parent="309" name="PRIMARY">
+    <key id="350" parent="309" name="PRIMARY">
       <NameSurrogate>1</NameSurrogate>
       <Primary>1</Primary>
       <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>
     </key>
-    <column id="349" parent="310" name="id_reserva">
+    <column id="351" parent="310" name="id_reserva">
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StoredType>int|0s</StoredType>
     </column>
-    <column id="350" parent="310" name="nombre_sala">
+    <column id="352" parent="310" name="nombre_sala">
       <Position>2</Position>
       <StoredType>varchar(50)|0s</StoredType>
     </column>
-    <column id="351" parent="310" name="edificio">
+    <column id="353" parent="310" name="edificio">
       <Position>3</Position>
       <StoredType>varchar(50)|0s</StoredType>
     </column>
-    <column id="352" parent="310" name="fecha">
+    <column id="354" parent="310" name="fecha">
       <Position>4</Position>
       <StoredType>date|0s</StoredType>
     </column>
-    <column id="353" parent="310" name="id_turno">
+    <column id="355" parent="310" name="id_turno">
       <Position>5</Position>
       <StoredType>int|0s</StoredType>
     </column>
-    <column id="354" parent="310" name="estado">
+    <column id="356" parent="310" name="estado">
       <Position>6</Position>
       <StoredType>varchar(50)|0s</StoredType>
     </column>
-    <foreign-key id="355" parent="310" name="reserva_ibfk_1">
+    <foreign-key id="357" parent="310" name="reserva_ibfk_1">
       <ColNames>nombre_sala
 edificio</ColNames>
       <RefColNames>nombre_sala
 edificio</RefColNames>
       <RefTableName>sala</RefTableName>
     </foreign-key>
-    <foreign-key id="356" parent="310" name="reserva_ibfk_2">
+    <foreign-key id="358" parent="310" name="reserva_ibfk_2">
       <ColNames>id_turno</ColNames>
       <RefColNames>id_turno</RefColNames>
       <RefTableName>turno</RefTableName>
     </foreign-key>
-    <index id="357" parent="310" name="PRIMARY">
+    <index id="359" parent="310" name="PRIMARY">
       <ColNames>id_reserva</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <index id="358" parent="310" name="nombre_sala">
+    <index id="360" parent="310" name="nombre_sala">
       <ColNames>nombre_sala
 edificio</ColNames>
       <Type>btree</Type>
     </index>
-    <index id="359" parent="310" name="id_turno">
+    <index id="361" parent="310" name="id_turno">
       <ColNames>id_turno</ColNames>
       <Type>btree</Type>
     </index>
-    <key id="360" parent="310" name="PRIMARY">
+    <key id="362" parent="310" name="PRIMARY">
       <NameSurrogate>1</NameSurrogate>
       <Primary>1</Primary>
       <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>
     </key>
-    <column id="361" parent="311" name="nombre_sala">
+    <column id="363" parent="311" name="ci_participante">
+      <NotNull>1</NotNull>
+      <Position>1</Position>
+      <StoredType>int|0s</StoredType>
+    </column>
+    <column id="364" parent="311" name="id_reserva">
+      <NotNull>1</NotNull>
+      <Position>2</Position>
+      <StoredType>int|0s</StoredType>
+    </column>
+    <column id="365" parent="311" name="fecha_solicitud_reserva">
+      <Position>3</Position>
+      <StoredType>datetime|0s</StoredType>
+    </column>
+    <column id="366" parent="311" name="asistencia">
+      <Position>4</Position>
+      <StoredType>tinyint(1)|0s</StoredType>
+    </column>
+    <foreign-key id="367" parent="311" name="reserva_participante_ibfk_1">
+      <ColNames>ci_participante</ColNames>
+      <RefColNames>ci</RefColNames>
+      <RefTableName>participante</RefTableName>
+    </foreign-key>
+    <foreign-key id="368" parent="311" name="reserva_participante_ibfk_2">
+      <ColNames>id_reserva</ColNames>
+      <RefColNames>id_reserva</RefColNames>
+      <RefTableName>reserva</RefTableName>
+    </foreign-key>
+    <index id="369" parent="311" name="PRIMARY">
+      <ColNames>ci_participante
+id_reserva</ColNames>
+      <Type>btree</Type>
+      <Unique>1</Unique>
+    </index>
+    <index id="370" parent="311" name="id_reserva">
+      <ColNames>id_reserva</ColNames>
+      <Type>btree</Type>
+    </index>
+    <key id="371" parent="311" name="PRIMARY">
+      <NameSurrogate>1</NameSurrogate>
+      <Primary>1</Primary>
+      <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>
+    </key>
+    <column id="372" parent="312" name="nombre_sala">
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StoredType>varchar(50)|0s</StoredType>
     </column>
-    <column id="362" parent="311" name="edificio">
+    <column id="373" parent="312" name="edificio">
       <NotNull>1</NotNull>
       <Position>2</Position>
       <StoredType>varchar(50)|0s</StoredType>
     </column>
-    <column id="363" parent="311" name="capacidad">
+    <column id="374" parent="312" name="capacidad">
       <Position>3</Position>
       <StoredType>int|0s</StoredType>
     </column>
-    <column id="364" parent="311" name="tipo_sala">
+    <column id="375" parent="312" name="tipo_sala">
       <Position>4</Position>
       <StoredType>varchar(50)|0s</StoredType>
     </column>
-    <foreign-key id="365" parent="311" name="sala_ibfk_1">
+    <foreign-key id="376" parent="312" name="sala_ibfk_1">
       <ColNames>edificio</ColNames>
       <RefColNames>nombre_edificio</RefColNames>
       <RefTableName>edificio</RefTableName>
     </foreign-key>
-    <index id="366" parent="311" name="PRIMARY">
+    <index id="377" parent="312" name="PRIMARY">
       <ColNames>nombre_sala
 edificio</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <index id="367" parent="311" name="edificio">
+    <index id="378" parent="312" name="edificio">
       <ColNames>edificio</ColNames>
       <Type>btree</Type>
     </index>
-    <key id="368" parent="311" name="PRIMARY">
+    <key id="379" parent="312" name="PRIMARY">
       <NameSurrogate>1</NameSurrogate>
       <Primary>1</Primary>
       <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>
     </key>
-    <column id="369" parent="312" name="id_turno">
+    <column id="380" parent="313" name="id_sancion">
+      <AutoIncrement>1</AutoIncrement>
       <NotNull>1</NotNull>
       <Position>1</Position>
       <StoredType>int|0s</StoredType>
     </column>
-    <column id="370" parent="312" name="hora_inicio">
+    <column id="381" parent="313" name="ci_participante">
+      <Position>2</Position>
+      <StoredType>int|0s</StoredType>
+    </column>
+    <column id="382" parent="313" name="fecha_inicio">
+      <Position>3</Position>
+      <StoredType>date|0s</StoredType>
+    </column>
+    <column id="383" parent="313" name="fecha_fin">
+      <Position>4</Position>
+      <StoredType>date|0s</StoredType>
+    </column>
+    <foreign-key id="384" parent="313" name="sancion_participante_ibfk_1">
+      <ColNames>ci_participante</ColNames>
+      <RefColNames>ci</RefColNames>
+      <RefTableName>participante</RefTableName>
+    </foreign-key>
+    <index id="385" parent="313" name="PRIMARY">
+      <ColNames>id_sancion</ColNames>
+      <Type>btree</Type>
+      <Unique>1</Unique>
+    </index>
+    <index id="386" parent="313" name="ci_participante">
+      <ColNames>ci_participante</ColNames>
+      <Type>btree</Type>
+    </index>
+    <key id="387" parent="313" name="PRIMARY">
+      <NameSurrogate>1</NameSurrogate>
+      <Primary>1</Primary>
+      <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>
+    </key>
+    <column id="388" parent="314" name="id_turno">
+      <NotNull>1</NotNull>
+      <Position>1</Position>
+      <StoredType>int|0s</StoredType>
+    </column>
+    <column id="389" parent="314" name="hora_inicio">
       <Position>2</Position>
       <StoredType>datetime|0s</StoredType>
     </column>
-    <column id="371" parent="312" name="hora_fin">
+    <column id="390" parent="314" name="hora_fin">
       <Position>3</Position>
       <StoredType>datetime|0s</StoredType>
     </column>
-    <index id="372" parent="312" name="PRIMARY">
+    <index id="391" parent="314" name="PRIMARY">
       <ColNames>id_turno</ColNames>
       <Type>btree</Type>
       <Unique>1</Unique>
     </index>
-    <key id="373" parent="312" name="PRIMARY">
+    <key id="392" parent="314" name="PRIMARY">
       <NameSurrogate>1</NameSurrogate>
       <Primary>1</Primary>
       <UnderlyingIndexName>PRIMARY</UnderlyingIndexName>

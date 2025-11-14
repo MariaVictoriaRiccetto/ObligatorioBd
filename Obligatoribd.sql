@@ -1,4 +1,4 @@
-
+create  database segunda;
 USE segunda;
 
 
@@ -253,4 +253,39 @@ INSERT INTO reserva_participante VALUES
 INSERT INTO sancion_participante(ci_participante, fecha_inicio, fecha_fin) VALUES
 (89123456, '2025-10-06', '2025-12-06'),
 (91234567, '2025-10-06', '2025-12-06');
+-- insert participante academico
+-- ver porque no anda el insert de reserva participante
 
+-- CONSULTAS
+-- veces reservadas cada sala
+select s.nombre_sala, count(*) as cantidad_reservas
+from reserva r
+         join sala s on r.nombre_sala = s.nombre_sala
+group by s.nombre_sala
+order by cantidad_reservas desc;
+-- devuelve la cantidad de veces que ser reservo un turno
+/*
+arreglar los id de reservas para que aparezcan mas de una vez reservada cada sala
+*/
+select t.id_turno, count(*) as veces_reservado
+from reserva r
+join turno t on t.id_turno = r.id_turno
+group by t.id_turno
+order by veces_reservado desc
+limit 1;
+-- promedio de participantes por sala
+select s.nombre_sala, avg(pr.cantidad_participante) as promedio_participantes
+from sala s
+join reserva r on r.nombre_sala=s.nombre_sala
+left join (select id_reserva,count(reserva_participante.ci_participante) as cantidad_participante
+           from reserva_participante
+           group by id_reserva)
+pr on pr.id_reserva=r.id_reserva
+group by s.nombre_sala ;
+-- reservas por facultad y carrera (programa_academico)
+select f.nombre_facultad, p.nombre_programa as carrera, count(ppa.ci_participante) as cantidad_participantes
+from facultad f
+join programa_academico p on f.id_facultad = p.id_facultad
+left join participante_programa_academico ppa on p.nombre_programa = ppa.nombre_programa
+group by f.nombre_facultad, p.nombre_programa
+order by f.nombre_facultad, p.nombre_programa;
