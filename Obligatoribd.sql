@@ -1,22 +1,35 @@
-USE ObligatorioBd;
 
--- ==========================
--- TABLAS BASE
--- ==========================
+USE segunda;
+
+
+CREATE TABLE login(
+    correo varchar(50) primary key ,
+    contraseña varchar(50)
+);
+
+CREATE TABLE participante(
+    ci int primary key ,
+    nombre varchar (45) ,
+    apellido varchar(45),
+    email varchar(50)
+);
+
 CREATE TABLE facultad(
-  id_facultad INT PRIMARY KEY,
-  nombre_facultad VARCHAR(50)
+    id_facultad int primary key,
+    nombre varchar(45)
 );
 
 CREATE TABLE edificio(
-  nombre_edificio VARCHAR(50) PRIMARY KEY,
-  direccion VARCHAR(50),
-  departamento VARCHAR(20)
+    id_edificio int primary key auto_increment,-- agregamos como primary key una id
+    nombre_edificio varchar(45),
+    direccion varchar(45),
+    departamento varchar(45)
+
 );
 
-
 CREATE TABLE programa_academico(
-  nombre_programa VARCHAR(50) PRIMARY KEY,
+    id_programa_academico int primary key auto_increment,-- agregamos como primary key una id
+  nombre_programa VARCHAR(50),
   id_facultad INT,
   tipo VARCHAR(50),
   FOREIGN KEY (id_facultad) REFERENCES facultad(id_facultad)
@@ -25,19 +38,21 @@ CREATE TABLE programa_academico(
 CREATE TABLE participante_programa_academico(
   id_alumno_programa INT PRIMARY KEY,
   ci_participante INT,
-  nombre_programa VARCHAR(50),
+    id_programa_academico int ,
   rol VARCHAR(15), -- estudiante o docente
   FOREIGN KEY (ci_participante) REFERENCES participante(ci),
-  FOREIGN KEY (nombre_programa) REFERENCES programa_academico(nombre_programa)
+  FOREIGN KEY (id_programa_academico) REFERENCES programa_academico(id_programa_academico)-- usamos de referenica la nueva id de programa academico
 );
 
 CREATE TABLE sala(
+    id_sala int primary key auto_increment,-- agregamos como primary key una id
   nombre_sala VARCHAR(50),
-  edificio VARCHAR(50),
+  id_edificio int(50),
   capacidad INT,
   tipo_sala VARCHAR(50),
-  PRIMARY KEY (nombre_sala, edificio),
-  FOREIGN KEY (edificio) REFERENCES edificio(nombre_edificio)
+
+
+  FOREIGN KEY (id_edificio) REFERENCES edificio(id_edificio)
 );
 
 CREATE TABLE turno(
@@ -47,19 +62,36 @@ CREATE TABLE turno(
 );
 
 CREATE TABLE reserva(
-  id_reserva INT PRIMARY KEY,
-  nombre_sala VARCHAR(50),
-  edificio VARCHAR(50),
-  fecha DATE,
-  id_turno INT,
-  estado VARCHAR(50),
-  FOREIGN KEY (nombre_sala, edificio) REFERENCES sala(nombre_sala, edificio),
-  FOREIGN KEY (id_turno) REFERENCES turno(id_turno)
+    id_reserva INT PRIMARY KEY AUTO_INCREMENT,
+    id_sala INT,
+    fecha DATE,
+    id_turno INT,
+    estado VARCHAR(50),
+    FOREIGN KEY (id_sala) REFERENCES sala(id_sala),
+    FOREIGN KEY (id_turno) REFERENCES turno(id_turno)
+);
+CREATE TABLE sancion_participante(
+    id_sancion INT PRIMARY KEY AUTO_INCREMENT,
+    ci_participante INT,
+    fecha_inicio DATE,
+    fecha_fin DATE,
+    FOREIGN KEY (ci_participante) REFERENCES participante(ci)
 );
 
--- ==========================
+CREATE TABLE reserva_participante(
+    ci_participante INT,
+    id_reserva INT,
+    fecha_solicitud_reserva DATETIME,
+    asistencia BOOLEAN,
+    PRIMARY KEY (ci_participante, id_reserva),
+    FOREIGN KEY (ci_participante) REFERENCES participante(ci),
+    FOREIGN KEY (id_reserva) REFERENCES reserva(id_reserva)
+);
+
+
 -- INSERTS
--- ==========================
+
+
 INSERT INTO facultad VALUES
 (1,'Facultad de Ingeniería'),
 (2,'Facultad de Ciencias Sociales'),
@@ -72,7 +104,7 @@ INSERT INTO facultad VALUES
 (9,'Facultad de Educación'),
 (10,'Facultad de Ciencias');
 
-INSERT INTO edificio VALUES
+INSERT INTO edificio(nombre_edificio, direccion, departamento) VALUES
 ('Sacré Cœur','Av. 8 de Octubre 2738', 'Montevideo'),
 ('San Jose', 'Av. 8 de Octubre 2733', 'Montevideo'),
 ('Semprun', 'Estero Bellaco 2771', 'Montevideo'),
@@ -81,6 +113,7 @@ INSERT INTO edificio VALUES
 ('Athanasius', 'Gral. Urquiza 2871', 'Montevideo'),
 ('Madre Marta', 'Av. Garibaldi 2831', 'Montevideo'),
 ('Casa Xalambrí', 'Cornelio Cantera 2728', 'Montevideo');
+
 
 INSERT INTO login VALUES
 ('natu@correo.ucu', 'soyNatu'),
@@ -116,11 +149,10 @@ INSERT INTO participante VALUES
 (55667788, 'Isabela', 'Riccetto', 'isa@correo.ucu'),
 (66778899,'Federico', 'Elgue','fede@correo.ucu');
 
-INSERT INTO programa_academico VALUES
+INSERT INTO programa_academico(nombre_programa, id_facultad, tipo) VALUES
 ('Abogacia', 4, 'grado'),
 ('Agronomía', 1, 'grado'),
 ('Ingenieria en Informatica', 1, 'grado'),
-('Ingenieria Audiovisual', 1, 'grado'),
 ('Artes Escenicas', 8, 'grado'),
 ('Fisioterapia', 3, 'grado'),
 ('Medicina', 3, 'grado'),
@@ -129,53 +161,96 @@ INSERT INTO programa_academico VALUES
 ('Economia', 5, 'grado'),
 ('Finanzas', 5, 'grado');
 
-INSERT INTO sala VALUES
-('sala 1', 'Sacré Cœur', 4, 'libre'),
-('sala 2', 'Sacré Cœur', 3, 'libre'),
-('sala 3', 'Sacré Cœur', 4, 'posgrado'),
-('sala 4', 'Sacré Cœur', 2, 'docentes'),
-('sala 5', 'San Jose', 4, 'libre'),
-('sala 6', 'San Jose', 4, 'posgrado'),
-('sala 7', 'San Jose', 2, 'posgrado'),
-('sala 8', 'San Jose', 3, 'docentes'),
-('sala 9', 'Semprun', 4, 'posgrado'),
-('sala 10', 'Semprun', 3, 'posgrado'),
-('sala 11', 'Semprun', 2, 'posgrado'),
-('sala 12', 'Semprun', 4, 'posgrado'),
-('sala 13', 'Mullin', 3, 'libre'),
-('sala 14', 'Mullin', 2, 'libre'),
-('sala 15', 'Mullin', 4, 'libre');
+
+INSERT INTO sala(nombre_sala, id_edificio, capacidad, tipo_sala) VALUES
+('sala 1', 1, 4, 'libre'),
+('sala 2', 1, 3, 'libre'),
+('sala 3', 1, 4, 'posgrado'),
+('sala 4', 1, 2, 'docentes'),
+('sala 5', 2, 4, 'libre'),
+('sala 6', 2, 4, 'posgrado'),
+('sala 7', 2, 2, 'posgrado'),
+('sala 8', 2, 3, 'docentes'),
+('sala 9', 3, 4, 'posgrado'),
+('sala 10', 3, 3, 'posgrado'),
+('sala 11', 3, 2, 'posgrado'),
+('sala 12', 3, 4, 'posgrado'),
+('sala 13', 4, 3, 'libre'),
+('sala 14', 4, 2, 'libre'),
+('sala 15', 4, 4, 'libre');
+
 
 INSERT INTO turno VALUES
-(1,'2025-10-05 09:30:00', '2025-10-05 11:30:00'),
-(2,'2025-10-05 09:40:00', '2025-10-05 11:00:00'),
-(3,'2025-10-05 08:00:00', '2025-10-05 09:00:00'),
-(4,'2025-10-06 09:30:00', '2025-10-06 11:30:00'),
-(5,'2025-10-06 08:30:00', '2025-10-06 09:30:00'),
-(6,'2025-10-06 10:00:00', '2025-10-06 12:00:00'),
-(7,'2025-10-07 15:00:00', '2025-10-07 17:00:00'),
-(8,'2025-10-07 10:15:00', '2025-10-07 11:00:00'),
-(9,'2025-10-07 16:30:00', '2025-10-07 18:30:00'),
-(10,'2025-10-08 08:30:00', '2025-10-08 10:30:00'),
-(11,'2025-10-08 12:00:00', '2025-10-08 13:30:00'),
-(12,'2025-10-08 08:00:00', '2025-10-08 10:00:00'),
-(13,'2025-10-09 14:30:00', '2025-10-09 16:30:00'),
-(14,'2025-10-09 13:00:00', '2025-10-09 14:00:00'),
-(15,'2025-10-09 17:30:00', '2025-10-09 19:30:00');
+(1,'09:00:00','10:00:00'),
+(2,'10:00:00','11:00:00'),
+(3,'11:00:00','12:00:00'),
+(4,'12:00:00','13:00:00'),
+(5,'13:00:00','14:00:00'),
+(6,'14:00:00','15:00:00'),
+(7,'15:00:00','16:00:00'),
+(8,'16:00:00','17:00:00'),
+(9,'17:00:00','18:00:00'),
+(10,'18:00:00','19:00:00');
 
-INSERT INTO reserva VALUES
-(1, 'sala 1','Sacré Cœur', '2025-10-05', 1, 'finalizada'),
-(2, 'sala 2','Sacré Cœur', '2025-10-05', 2, 'finalizada'),
-(3, 'sala 3','Sacré Cœur', '2025-10-05', 3, 'cancelada'),
-(4, 'sala 1','Sacré Cœur', '2025-10-06', 4, 'cancelada'),
-(5, 'sala 12','Semprun', '2025-10-06', 5, 'sin asistencia'),
-(6, 'sala 15','Mullin', '2025-10-06', 6, 'activa'),
-(7, 'sala 6','San Jose', '2025-10-07', 7, 'activa'),
-(8, 'sala 9','Semprun', '2025-10-07', 8, 'cancelada'),
-(9, 'sala 13','Mullin', '2025-10-07', 9, 'activa'),
-(10, 'sala 1','Sacré Cœur', '2025-10-08', 10, 'activa'),
-(11, 'sala 4','Sacré Cœur', '2025-10-08', 11, 'activa'),
-(12, 'sala 5','San Jose', '2025-10-08', 12, 'cancelada'),
-(13, 'sala 8','San Jose', '2025-10-09', 13, 'activa'),
-(14, 'sala 3','Sacré Cœur', '2025-10-09', 14, 'activa'),
-(15, 'sala 7','San Jose', '2025-10-09', 15, 'cancelada');
+
+INSERT INTO reserva(id_sala, fecha, id_turno, estado) VALUES
+(1, '2025-10-05', 1, 'finalizada'),
+(2, '2025-10-05', 2, 'finalizada'),
+(3, '2025-10-05', 3, 'cancelada'),
+(1, '2025-10-06', 4, 'cancelada'),
+(12, '2025-10-06', 5, 'sin asistencia'),
+(15, '2025-10-06', 6, 'activa'),
+(6, '2025-10-07', 7, 'activa'),
+(9, '2025-10-07', 8, 'cancelada'),
+(13, '2025-10-07', 9, 'activa'),
+(1, '2025-10-08', 10, 'activa'),
+(4, '2025-10-08', 11, 'activa'),
+(5, '2025-10-08', 12, 'cancelada'),
+(8, '2025-10-09', 13, 'activa'),
+(3, '2025-10-09', 14, 'activa'),
+(7, '2025-10-09', 15, 'cancelada');
+
+INSERT INTO reserva_participante VALUES
+(12345678, 1, '2025-09-28 10:00:00', TRUE),
+(23456789, 1, '2025-09-28 10:05:00', TRUE),
+
+(34567891, 2, '2025-09-28 11:00:00', TRUE),
+(45678912, 2, '2025-09-28 11:02:00', TRUE),
+
+(56789123, 3, '2025-09-29 09:30:00', FALSE),
+(67891234, 3, '2025-09-29 09:33:00', FALSE),
+
+(78912345, 4, '2025-10-01 08:00:00', FALSE),
+
+(89123456, 5, '2025-10-02 14:00:00', FALSE),
+(91234567, 5, '2025-10-02 14:03:00', FALSE),
+
+(11223344, 6, '2025-10-03 12:15:00', FALSE),
+(22334455, 6, '2025-10-03 12:17:00', FALSE),
+
+(33445566, 7, '2025-10-03 16:00:00', FALSE),
+(44556677, 7, '2025-10-03 16:03:00', FALSE),
+
+(55667788, 8, '2025-10-04 11:00:00', FALSE),
+
+(66778899, 9, '2025-10-04 11:30:00', FALSE),
+(12345678, 9, '2025-10-04 11:32:00', FALSE),
+
+(23456789, 10, '2025-10-04 15:10:00', FALSE),
+
+(34567891, 11, '2025-10-05 09:00:00', FALSE),
+(45678912, 11, '2025-10-05 09:03:00', FALSE),
+
+(56789123, 12, '2025-10-05 10:30:00', FALSE),
+
+(67891234, 13, '2025-10-05 11:15:00', FALSE),
+(78912345, 13, '2025-10-05 11:18:00', FALSE),
+
+(89123456, 14, '2025-10-06 08:45:00', FALSE),
+
+(91234567, 15, '2025-10-06 09:00:00', FALSE);
+
+INSERT INTO sancion_participante(ci_participante, fecha_inicio, fecha_fin) VALUES
+(89123456, '2025-10-06', '2025-12-06'),
+(91234567, '2025-10-06', '2025-12-06');
+
