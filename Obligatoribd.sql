@@ -286,7 +286,7 @@ INSERT INTO sancion_participante(ci_participante, fecha_inicio, fecha_fin) VALUE
 -- veces reservadas cada sala
 select s.nombre_sala, count(*) as cantidad_reservas
 from reserva r
-join sala s on r.id_sala = s.id_sala            -- FUNICONA NO TOCAR 
+join sala s on r.id_sala = s.id_sala            -- FUNICONA NO TOCAR
 group by s.nombre_sala
 order by cantidad_reservas desc;
 -- devuelve la cantidad de veces que ser reservo un turno
@@ -318,3 +318,5 @@ join programa_academico p on f.id_facultad = p.id_facultad                      
 left join participante_programa_academico ppa on p.id_programa_academico = ppa.id_programa_academico
 group by f.nombre, p.nombre_programa
 order by facultad,carrera;
+
+-- SIGUIENTE CONSULTA
