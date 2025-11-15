@@ -50,8 +50,6 @@ CREATE TABLE sala(
   id_edificio int(50),
   capacidad INT,
   tipo_sala VARCHAR(50),
-
-
   FOREIGN KEY (id_edificio) REFERENCES edificio(id_edificio)
 );
 
@@ -60,6 +58,11 @@ CREATE TABLE turno(
   hora_inicio DATETIME,
   hora_fin DATETIME
 );
+-- pequeña confusion al poner datetime
+ALTER TABLE turno
+    MODIFY hora_inicio TIME,
+    MODIFY hora_fin TIME;
+-- ---------------------------------
 
 CREATE TABLE reserva(
     id_reserva INT PRIMARY KEY AUTO_INCREMENT,
@@ -149,6 +152,29 @@ INSERT INTO participante VALUES
 (55667788, 'Isabela', 'Riccetto', 'isa@correo.ucu'),
 (66778899,'Federico', 'Elgue','fede@correo.ucu');
 
+INSERT INTO participante_programa_academico
+(id_alumno_programa, ci_participante, id_programa_academico, rol)
+VALUES
+(1, 11223344, 1, 'estudiante'),
+(2, 12345678, 2, 'estudiante'),
+(3, 22334455, 3, 'estudiante'),
+(4, 23456789, 4, 'estudiante'),
+(5, 33445566, 5, 'estudiante'),
+(6, 34567891, 6, 'estudiante'),
+(7, 44556677, 7, 'estudiante'),
+(8, 45678912, 8, 'estudiante'),
+(9, 55667788, 9, 'estudiante'),
+(10, 56789123, 10, 'estudiante'),
+(11, 66778899, 3, 'estudiante'),
+(12, 66778899, 9, 'estudiante'),
+(13, 67891234, 1, 'estudiante'),
+(14, 67891234, 5, 'estudiante'),
+(15, 67891234, 10, 'estudiante'),
+(16, 78912345, 4, 'estudiante'),
+(17, 89123456, 6, 'estudiante'),
+(18, 91234567, 7, 'estudiante');
+
+
 INSERT INTO programa_academico(nombre_programa, id_facultad, tipo) VALUES
 ('Abogacia', 4, 'grado'),
 ('Agronomía', 1, 'grado'),
@@ -204,11 +230,11 @@ INSERT INTO reserva(id_sala, fecha, id_turno, estado) VALUES
 (9, '2025-10-07', 8, 'cancelada'),
 (13, '2025-10-07', 9, 'activa'),
 (1, '2025-10-08', 10, 'activa'),
-(4, '2025-10-08', 11, 'activa'),
-(5, '2025-10-08', 12, 'cancelada'),
-(8, '2025-10-09', 13, 'activa'),
-(3, '2025-10-09', 14, 'activa'),
-(7, '2025-10-09', 15, 'cancelada');
+(4, '2025-10-08', 1, 'activa'),
+(5, '2025-10-08', 1, 'cancelada'),
+(8, '2025-10-09', 3, 'activa'),
+(3, '2025-10-09', 4, 'activa'),
+(7, '2025-10-09', 1, 'cancelada');
 
 INSERT INTO reserva_participante VALUES
 (12345678, 1, '2025-09-28 10:00:00', TRUE),
@@ -260,32 +286,35 @@ INSERT INTO sancion_participante(ci_participante, fecha_inicio, fecha_fin) VALUE
 -- veces reservadas cada sala
 select s.nombre_sala, count(*) as cantidad_reservas
 from reserva r
-         join sala s on r.nombre_sala = s.nombre_sala
+join sala s on r.id_sala = s.id_sala            -- FUNICONA NO TOCAR 
 group by s.nombre_sala
 order by cantidad_reservas desc;
 -- devuelve la cantidad de veces que ser reservo un turno
 /*
-arreglar los id de reservas para que aparezcan mas de una vez reservada cada sala
+LISTO :arreglar los id de reservas para que aparezcan mas de una vez reservada cada sala
 */
 select t.id_turno, count(*) as veces_reservado
 from reserva r
-join turno t on t.id_turno = r.id_turno
+join turno t on t.id_turno = r.id_turno -- FUNCIONA NO TOCAR
 group by t.id_turno
 order by veces_reservado desc
 limit 1;
+
 -- promedio de participantes por sala
-select s.nombre_sala, avg(pr.cantidad_participante) as promedio_participantes
+-- avg es para hacer el promedio y roun ((),1) es para poner que devuelva solo un decimal despues de la coma
+select s.nombre_sala, ROUND(avg(pr.cantidad_participante),1) as promedio_participantes
 from sala s
-join reserva r on r.nombre_sala=s.nombre_sala
-left join (select id_reserva,count(reserva_participante.ci_participante) as cantidad_participante
+join reserva r on r.id_sala=s.id_sala
+left join (select id_reserva,count(ci_participante) as cantidad_participante                        -- FUNCIONA NO TOCAR
            from reserva_participante
            group by id_reserva)
-pr on pr.id_reserva=r.id_reserva
+pr on pr.id_reserva=r.id_reserva -- Unimos cada reserva con la cantidad de participantes que tiene (por id_reserva)
 group by s.nombre_sala ;
+
 -- reservas por facultad y carrera (programa_academico)
-select f.nombre_facultad, p.nombre_programa as carrera, count(ppa.ci_participante) as cantidad_participantes
+select f.nombre as facultad, p.nombre_programa as carrera, count(ppa.ci_participante) as cantidad_participantes
 from facultad f
-join programa_academico p on f.id_facultad = p.id_facultad
-left join participante_programa_academico ppa on p.nombre_programa = ppa.nombre_programa
-group by f.nombre_facultad, p.nombre_programa
-order by f.nombre_facultad, p.nombre_programa;
+join programa_academico p on f.id_facultad = p.id_facultad                                             -- FUNCIONA NO TOCAR
+left join participante_programa_academico ppa on p.id_programa_academico = ppa.id_programa_academico
+group by f.nombre, p.nombre_programa
+order by facultad,carrera;
