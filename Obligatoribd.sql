@@ -173,8 +173,9 @@ VALUES
 (16, 78912345, 4, 'estudiante'),
 (17, 89123456, 6, 'estudiante'),
 (18, 91234567, 7, 'estudiante');
+update participante_programa_academico set rol= 'docente' where ci_participante in (91234567,67891234);
 
-
+-- hago este update ppa para que algunos de los datos queden con el rol docente y asi quede como se pide en la consigna
 INSERT INTO programa_academico(nombre_programa, id_facultad, tipo) VALUES
 ('Abogacia', 4, 'grado'),
 ('Agronomía', 1, 'grado'),
@@ -275,12 +276,23 @@ INSERT INTO reserva_participante VALUES
 (89123456, 14, '2025-10-06 08:45:00', FALSE),
 
 (91234567, 15, '2025-10-06 09:00:00', FALSE);
-
+update  reserva_participante set ci_participante=12345678 where ci_participante in (78912345,89123456);
 INSERT INTO sancion_participante(ci_participante, fecha_inicio, fecha_fin) VALUES
 (89123456, '2025-10-06', '2025-12-06'),
-(91234567, '2025-10-06', '2025-12-06');
--- insert participante academico
--- ver porque no anda el insert de reserva participante
+(91234567, '2025-10-06', '2025-12-06'),
+(56789123, '2025-10-10', '2025-12-10'),
+(67891234, '2025-10-10', '2025-12-10'),
+(78912345, '2025-10-10', '2025-12-10'),
+(11223344, '2025-10-10', '2025-12-10'),
+(22334455, '2025-10-10', '2025-12-10'),
+(33445566, '2025-10-10', '2025-12-10'),
+(44556677, '2025-10-10', '2025-12-10'),
+(55667788, '2025-10-10', '2025-12-10'),
+(66778899, '2025-10-10', '2025-12-10'),
+(12345678, '2025-10-10', '2025-12-10'),
+(23456789, '2025-10-10', '2025-12-10'),
+(34567891, '2025-10-10', '2025-12-10'),
+(45678912, '2025-10-10', '2025-12-10');
 
 -- CONSULTAS
 -- veces reservadas cada sala
@@ -291,7 +303,7 @@ group by s.nombre_sala
 order by cantidad_reservas desc;
 -- devuelve la cantidad de veces que ser reservo un turno
 /*
-LISTO :arreglar los id de reservas para que aparezcan mas de una vez reservada cada sala
+LISTO :arreglar los id de reservas para que aparezcan más de una vez reservada cada sala
 */
 select t.id_turno, count(*) as veces_reservado
 from reserva r
@@ -319,4 +331,46 @@ left join participante_programa_academico ppa on p.id_programa_academico = ppa.i
 group by f.nombre, p.nombre_programa
 order by facultad,carrera;
 
--- SIGUIENTE CONSULTA
+-- cantidad de reservas y asistencias de profesores y alumnos
+-- SUM cuenta solo cuantas veces esta la asistencia en true y en false, si usabamos count nos iba a contar todas la lineas indistintamente
+select ppa.rol , count(rp.id_reserva) as total_reservas, sum(rp.asistencia= TRUE) as total_asistencias,sum(rp.asistencia= FALSE) as inasistencias
+from participante_programa_academico ppa
+join reserva_participante rp on ppa.ci_participante = rp.ci_participante -- FUNCIONA NO TOCAR
+group by ppa.rol ;
+
+-- cantidad de sanciones para profesores y alumnos
+select ppa.rol, sp.ci_participante, count(*) as cantidad_sanciones
+from participante_programa_academico ppa
+join sancion_participante sp on ppa.ci_participante= sp.ci_participante -- FUNCIONA NO TOCAR
+group by ppa.rol, sp.ci_participante
+order by ppa.rol, sp.ci_participante;
+
+-- porcentaje de reservas efectivas vs canceladas/ no asistidas
+select ppa.rol  , count(rp.id_reserva) as total_reservas, round(avg(rp.asistencia= TRUE),1) as porcentaje_asistencias,round(avg(rp.asistencia= FALSE),1) as porcentaje_inasistencias
+from participante_programa_academico ppa
+join reserva_participante rp on ppa.ci_participante = rp.ci_participante -- FUNCIONA NO TOCAR
+group by ppa.rol ;
+-- Participante con mas inasistencias (extra 1)
+select ppa.rol, rp.ci_participante, sum(rp.asistencia= FALSE) as inasistencias
+from participante_programa_academico ppa
+join reserva_participante rp on ppa.ci_participante = rp.ci_participante
+group by ppa.rol, rp.ci_participante
+order by inasistencias desc
+limit 1;
+-- Ranking top 3 de participantes con mas reservas activas (extra 2)
+select rp.ci_participante,ppa.rol,COUNT(*) AS total_reservas
+from reserva_participante rp
+join participante_programa_academico ppa ON ppa.ci_participante = rp.ci_participante
+group by rp.ci_participante, ppa.rol
+order by total_reservas DESC
+limit 3;
+-- cantidad de salas por edificio (extra 3)
+select  e.nombre_edificio,COUNT(*) AS cantidad_salas
+from sala s
+join edificio e ON s.id_edificio = e.id_edificio
+group by e.nombre_edificio;
+
+
+
+
+
