@@ -208,6 +208,7 @@ INSERT INTO sala(nombre_sala, id_edificio, capacidad, tipo_sala) VALUES
 
 
 INSERT INTO turno VALUES
+(0,'08:00:00','9:00:00'),
 (1,'09:00:00','10:00:00'),
 (2,'10:00:00','11:00:00'),
 (3,'11:00:00','12:00:00'),
@@ -217,7 +218,11 @@ INSERT INTO turno VALUES
 (7,'15:00:00','16:00:00'),
 (8,'16:00:00','17:00:00'),
 (9,'17:00:00','18:00:00'),
-(10,'18:00:00','19:00:00');
+(10,'18:00:00','19:00:00'),
+(11,'19:00:00','20:00:00'),
+(12,'20:00:00','21:00:00'),
+(13,'21:00:00','22:00:00'),
+(14,'22:00:00','23:00:00');
 
 
 INSERT INTO reserva(id_sala, fecha, id_turno, estado) VALUES
@@ -372,5 +377,8 @@ group by e.nombre_edificio;
 
 
 
+ALTER table turno
+    MODIFY hora_inicio TIME,
+    MODIFY hora_fin TIME;
 
 
