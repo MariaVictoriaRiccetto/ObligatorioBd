@@ -14,9 +14,9 @@ from  funciones import  (
 
 app = Flask(__name__)
 
-# -------------------------
-# TEST CONEXION
-# -------------------------
+
+#testeo de la conexion
+
 @app.route('/test-db')
 def test_db():
     conn = get_connection()
@@ -32,9 +32,7 @@ def test_db():
 
     return jsonify({"conexion_exitosa": True, "servidor_hora": str(resultado[0])})
 
-# -------------------------
-# LISTAR PARTICIPANTES
-# -------------------------
+#Participantes ABM
 @app.route('/participantes', methods=['GET'])#checked
 def listar_participantes():
     conn = get_connection()
@@ -47,9 +45,7 @@ def listar_participantes():
 
     return jsonify(participantes)
 
-# -------------------------
-# CREAR PARTICIPANTE
-# -------------------------
+
 @app.route('/participantes/crear', methods=['POST'])#checked
 def crear_participante():
     data = request.get_json()
@@ -79,9 +75,6 @@ def crear_participante():
         cursor.close()
         conn.close()
 
-# -------------------------
-# ELIMINAR PARTICIPANTE
-# -------------------------
 @app.route('/participantes/delete/<ci>', methods=['DELETE'])#checked
 def eliminar_participante(ci):
     conn = get_connection()
@@ -96,9 +89,7 @@ def eliminar_participante(ci):
 
     return jsonify({"status": "Participante eliminado correctamente"})
 
-# -------------------------
-# MODIFICAR PARTICIPANTE
-# -------------------------
+
 @app.route('/participantes/modificar/<int:ci>', methods=['PUT'])#checked
 def modificar_participante(ci):
     data = request.get_json()
@@ -124,6 +115,7 @@ def modificar_participante(ci):
 
     return jsonify({"status": "Participante modificado correctamente"})
 
+#Salas ABM
 @app.route('/sala/crear', methods=['POST'])#checked
 def crearSala():
     data=request.get_json()#transforma lo que le enviamos en un diccionario
@@ -184,8 +176,8 @@ def modificarSala(id_sala):
     conn.close()
     return jsonify({"status": "Sala modificada correctamente"})
 
-
-@app.route("/reservas/crear", methods=["POST"])
+#Reservas
+@app.route("/reservas/crear", methods=["POST"])  #Checked
 def crearReservas():
     data = request.get_json()
 
@@ -223,7 +215,6 @@ def crearReservas():
     cursor = conn.cursor()
 
     id_reservas_creadas = []
-
     for turno in id_turnos:
         cursor.execute(
             "INSERT INTO reserva (id_sala, fecha, id_turno, estado) "
@@ -252,11 +243,91 @@ def crearReservas():
         "reservas": id_reservas_creadas
     }), 201
 
+@app.route("/reservas/eliminar/<int:id_reserva>", methods=["DELETE"]) #Checked
+def eliminarReserva(id_reserva):
 
+    conn=get_connection()
+    cursor=conn.cursor()
 
+    cursor.execute("DELETE FROM reserva WHERE id_reserva=%s ", (id_reserva,) )
 
+    conn.commit()
 
+    cursor.close()
+    conn.close()
 
+    return jsonify({"status": " Reserva eliminada correctamente "})
+
+@app.route("/reservas/modificar/<int:id_reserva>", methods=["PUT"])
+def modificarReserva(id_reserva):
+    data = request.get_json()
+
+    ci = data.get("ci")
+    id_sala = data.get("id_sala")
+    fecha = data.get("fecha")
+    id_turnos = data.get("id_turnos")
+    participantes = data.get("participantes")
+
+    # Validaciones
+    if esta_sancionado(ci):
+        return jsonify({"error": "El usuario está sancionado y no puede reservar"}), 403
+
+    if not sala_existe(id_sala):
+        return jsonify({"error": "La sala no existe"}), 400
+
+    if not turnos_validos(id_turnos):
+        return jsonify({"error": "Uno o más turnos no existen"}), 400
+
+    if not validar_capacidad(id_sala, participantes):
+        return jsonify({"error": "Excede la capacidad de la sala"}), 400
+
+    if not validar_tipo_sala(participantes, id_sala):
+        return jsonify({"error": "Tipo de sala no permitido"}), 400
+
+    if not validar_limite_diario(ci, fecha, id_turnos):
+        return jsonify({"error": "Límite de 2 horas diarias excedido"}), 400
+
+    if not validar_limite_semanal(ci, fecha):
+        return jsonify({"error": "Límite de 3 reservas semanales excedido"}), 400
+
+    if hay_solapamiento(id_sala, fecha, id_turnos):
+        return jsonify({"error": "Ya existe una reserva en esos horarios"}), 400
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # 1. Eliminar la reserva vieja (y sus participantes por cascada)
+    cursor.execute("DELETE FROM reserva WHERE id_reserva = %s", (id_reserva,))
+    conn.commit()
+
+    # 2. Crear las nuevas reservas según turnos
+    id_reservas_creadas = []
+    for turno in id_turnos:
+        cursor.execute(
+            "INSERT INTO reserva (id_sala, fecha, id_turno, estado) "
+            "VALUES (%s, %s, %s, 'activa')",
+            (id_sala, fecha, turno)
+        )
+        conn.commit()
+
+        nueva_id = cursor.lastrowid
+        id_reservas_creadas.append(nueva_id)
+
+        for ci_p in participantes:
+            cursor.execute(
+                "INSERT INTO reserva_participante (ci_participante, id_reserva, fecha_solicitud_reserva, asistencia) "
+                "VALUES (%s, %s, NOW(), FALSE)",
+                (ci_p, nueva_id)
+            )
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return jsonify({
+        "status": "Reserva modificada correctamente",
+        "reservas": id_reservas_creadas
+    }), 200
 
 
 # Levantar el server todo el codigo debe estar arriba para que le programa lo tome

@@ -1,4 +1,7 @@
 from bd import get_connection
+import mysql.connector
+from flask import Flask, jsonify, request
+
 
 def esta_sancionado(ci):
     conn=get_connection()
@@ -116,7 +119,7 @@ def validar_tipo_sala(participantes, id_sala ):
         roles=cursor.fetchall()
 
         if not roles:
-            return false
+            return False
 
         if tipo_sala=="posgrado":
             if not any(r[0] in ("posgrado", "docentes") for r in roles):
@@ -144,7 +147,7 @@ def validar_limite_diario(ci,fecha, id_turnos):
 
     cursor.execute("SELECT count(*) from reserva r "
                        "Join reserva_participante rp on r.id_reserva =rp.id_reserva "
-                       "where rp.ci_participante=%s"
+                       "where rp.ci_participante=%s "
                        "and r.fecha=%s "
                        "and r.estado='activa'",(ci,fecha) )
 

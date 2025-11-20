@@ -376,9 +376,17 @@ join edificio e ON s.id_edificio = e.id_edificio
 group by e.nombre_edificio;
 
 
-
+#Lo pasamos de datetime a time, debido a que necesitamos solo la hora, no es necesario saber la fecha exacta, como dividimos cada turno en un horario, por ejemplo turno 1 = 8-9 y  asi sucesivamente, despues a la hora de la reserva se elige uno de los turnos y una de las fechas, de esta manera podemos elegir mismos turnos en distintas fechas.
 ALTER table turno
     MODIFY hora_inicio TIME,
     MODIFY hora_fin TIME;
 
+#esta decision fue tomada debido a que a la hora de eliminar una reserva no nos permitia debido a que la tabla reserva participante estaba usando el id de reserva como foreign key, al estar esa foreign key eliminada el progama tira error. Por eso lo que decidimos fue modificar nuestra tabla reserva participante para que cuando borremos una reserva se borre en esta tabla tambiém. Para eso usamos cascada que fue lo que dimos en clase
+ALTER TABLE reserva_participante
+DROP FOREIGN KEY reserva_participante_2;
+
+ALTER TABLE reserva_participante
+ADD CONSTRAINT reserva_participante_2
+FOREIGN KEY (id_reserva) REFERENCES reserva(id_reserva)
+ON DELETE CASCADE;
 
