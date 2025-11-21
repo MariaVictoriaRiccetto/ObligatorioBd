@@ -398,3 +398,10 @@ JOIN reserva r ON r.id_reserva = rp.id_reserva
 WHERE r.fecha < CURRENT_DATE
   AND rp.asistencia = 0;
 
+
+#creamos la foreign key con facultad asi podemos relacionar edificio y facultad
+ALTER TABLE edificio
+ADD COLUMN id_facultad INT,
+ADD FOREIGN KEY (id_facultad) REFERENCES facultad(id_facultad);
+
+Insert into edificio (id)
