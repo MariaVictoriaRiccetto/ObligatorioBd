@@ -11,7 +11,9 @@ from  funciones import  (
     validar_tipo_sala,
     validar_limite_diario,
     validar_limite_semanal,
-    hay_solapamiento
+    hay_solapamiento,
+    participante_existe
+
 )
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -182,9 +184,41 @@ def modificarSala(id_sala):
     conn.close()
     return jsonify({"status": "Sala modificada correctamente"})
 
+@app.route("/salas/obtener", methods=["GET"])
+def obtenerSalas():
+
+    conn = get_connection()
+    cursor=conn.cursor()
+    cursor.execute("Select * From sala")
+    salas = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return jsonify({"Estado": "Se obtuvieron todas las salas", "Datos": salas})
+
+
+
+
 # --------------------------------------------------------------------------------------------------------------------------
 #----------------------------------------------RESERVAS--------------------------------------------------------------------
 # --------------------------------------------------------------------------------------------------------------------------
+
+
+@app.route("/reservas/obtener", methods=["GET"])
+def obtenerReservas():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("Select * from reserva ")
+    reservas=cursor.fetchall()
+
+
+    cursor.close()
+    conn.close()
+
+    return jsonify({"Estado":"Reservas obtenidos con éxito ", "Data":reservas})
+
 @app.route("/reservas/crear", methods=["POST"])  #Checked
 def crearReservas():
     data = request.get_json()
@@ -194,6 +228,9 @@ def crearReservas():
     fecha = data.get("fecha")
     id_turnos = data.get("id_turnos")
     participantes = data.get("participantes")
+
+    if not participante_existe(ci):
+        return jsonify({"error":" el participante no existe "}), 400
 
     if esta_sancionado(ci):
         return jsonify({"error": "El usuario está sancionado y no puede reservar"}), 403
@@ -551,7 +588,93 @@ def listarObtener():
 
 
 
+# --------------------------------------------------------------------------------------------------------------------------
+#----------------------------------------------Sistema de reportes --------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------------
 
+#EndPoint para obtener salas más reservadas
+@app.route("/reportes/salasMaxReserva", methods=["GET"])
+def obtenerMaxReserva():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""select s.nombre_sala, count(*) as cantidad_reservas
+        from reserva r
+        join sala s on r.id_sala = s.id_sala    
+        group by s.nombre_sala
+        order by cantidad_reservas desc;""")
+
+    resultado=cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return jsonify({"estado": "consulta realizada con exito", "data": resultado})
+
+#Obtener turnos mas demandados
+@app.route("/reportes/turnosMax", methods=["GET"])
+def obtenerTurnosMasDemandados():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""select t.id_turno, count(*) as veces_reservado
+        from reserva r
+        join turno t on t.id_turno = r.id_turno 
+        group by t.id_turno
+        order by veces_reservado desc
+        limit 1;""")
+
+    resultado=cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return jsonify({"Estado": "Se realizo la consulta correctamente ", "Los turnos mas demandados son ": resultado})
+
+@app.route("/reportes/sala/promedio", methods=["GET"])
+def obtenerPromedioSala():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""select s.nombre_sala, ROUND(avg(pr.cantidad_participante),1) as promedio_participantes
+        from sala s
+        join reserva r on r.id_sala=s.id_sala
+        left join (select id_reserva,count(ci_participante) as cantidad_participante                       
+                   from reserva_participante
+                   group by id_reserva)
+        pr on pr.id_reserva=r.id_reserva -- Unimos cada reserva con la cantidad de participantes que tiene (por id_reserva)
+        group by s.nombre_sala ;""")
+    resultado=cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return jsonify({"Estado": "Se realizo la consulta correctamente ", "El promedio de la sala es  ": resultado})
+
+@app.route("/reportes/reservas/facultad-carrera")
+def obtenerCantidadReservasFacultadCarrera():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""SELECT 
+    f.nombre AS facultad,
+    c.nombre AS carrera,
+    COUNT(r.id_reserva) AS cantidad_reservas
+FROM reserva_participante rp
+JOIN participante p ON r.ci = p.ci
+JOIN carrera c ON p.id_carrera = c.id_carrera
+JOIN facultad f ON c.id_facultad = f.id_facultad
+GROUP BY f.nombre, c.nombre
+ORDER BY f.nombre, c.nombre;
+
+""")
+
+    resultado=cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return jsonify({"Estado": "Se realizo la consulta correctamente ", "El promedio de la sala es  ": resultado})
 
 
 

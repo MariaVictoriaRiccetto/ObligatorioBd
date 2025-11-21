@@ -318,7 +318,9 @@ order by veces_reservado desc
 limit 1;
 
 -- promedio de participantes por sala
--- avg es para hacer el promedio y roun ((),1) es para poner que devuelva solo un decimal despues de la coma
+-- avg es para hacer el porcentaje y round ((),1) es para poner que devuelva solo un decimal despues de la coma
+
+
 select s.nombre_sala, ROUND(avg(pr.cantidad_participante),1) as promedio_participantes
 from sala s
 join reserva r on r.id_sala=s.id_sala
@@ -335,9 +337,11 @@ join programa_academico p on f.id_facultad = p.id_facultad                      
 left join participante_programa_academico ppa on p.id_programa_academico = ppa.id_programa_academico
 group by f.nombre, p.nombre_programa
 order by facultad,carrera;
-
--- cantidad de reservas y asistencias de profesores y alumnos
--- SUM cuenta solo cuantas veces esta la asistencia en true y en false, si usabamos count nos iba a contar todas la lineas indistintamente
+/*
+cantidad de reservas y asistencias de profesores y alumnos
+SUM cuenta solo cuantas veces esta la asistencia en true y en false, si usabamos count nos iba a contar todas la líneas indistintamente
+Esto permite contar asistencias y no asistencias sin CASE ni IF, simplificando las consultas y mejorando la legibilidad.
+*/
 select ppa.rol , count(rp.id_reserva) as total_reservas, sum(rp.asistencia= TRUE) as total_asistencias,sum(rp.asistencia= FALSE) as inasistencias
 from participante_programa_academico ppa
 join reserva_participante rp on ppa.ci_participante = rp.ci_participante -- FUNCIONA NO TOCAR
@@ -374,14 +378,23 @@ select  e.nombre_edificio,COUNT(*) AS cantidad_salas
 from sala s
 join edificio e ON s.id_edificio = e.id_edificio
 group by e.nombre_edificio;
-
-
-#Lo pasamos de datetime a time, debido a que necesitamos solo la hora, no es necesario saber la fecha exacta, como dividimos cada turno en un horario, por ejemplo turno 1 = 8-9 y  asi sucesivamente, despues a la hora de la reserva se elige uno de los turnos y una de las fechas, de esta manera podemos elegir mismos turnos en distintas fechas.
+/*
+Se modificó el tipo de datos de hora_inicio y hora_fin a TIME porque
+los turnos representan franjas horarias fijas del día y no dependen de una fecha.
+Esto evita redundancia, simplifica validaciones y permite reutilizar turnos
+en múltiples fechas sin generar valores inconsistentes.
+*/
 ALTER table turno
     MODIFY hora_inicio TIME,
     MODIFY hora_fin TIME;
+/*
+esta decision fue tomada debido a que a la hora de eliminar una reserva
+Esto garantiza que al eliminar una reserva, se eliminen automáticamente
+todos los registros asociados en reserva_participante.
+Evita errores por claves foráneas dependientes y mantiene la base de datos limpia,
+evitando datos huérfanos.
+*/
 
-#esta decision fue tomada debido a que a la hora de eliminar una reserva no nos permitia debido a que la tabla reserva participante estaba usando el id de reserva como foreign key, al estar esa foreign key eliminada el progama tira error. Por eso lo que decidimos fue modificar nuestra tabla reserva participante para que cuando borremos una reserva se borre en esta tabla tambiém. Para eso usamos cascada que fue lo que dimos en clase
 ALTER TABLE reserva_participante
 DROP FOREIGN KEY reserva_participante_2;
 
@@ -398,3 +411,10 @@ JOIN reserva r ON r.id_reserva = rp.id_reserva
 WHERE r.fecha < CURRENT_DATE
   AND rp.asistencia = 0;
 
+
+#creamos la foreign key con facultad asi podemos relacionar edificio y facultad
+ALTER TABLE edificio
+ADD COLUMN id_facultad INT,
+ADD FOREIGN KEY (id_facultad) REFERENCES facultad(id_facultad);
+
+Insert into edificio (id)
