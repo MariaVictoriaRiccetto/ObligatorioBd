@@ -390,3 +390,11 @@ ADD CONSTRAINT reserva_participante_2
 FOREIGN KEY (id_reserva) REFERENCES reserva(id_reserva)
 ON DELETE CASCADE;
 
+SELECT rp.ci_participante,
+       rp.id_reserva,
+       r.fecha
+FROM reserva_participante rp
+JOIN reserva r ON r.id_reserva = rp.id_reserva
+WHERE r.fecha < CURRENT_DATE
+  AND rp.asistencia = 0;
+
