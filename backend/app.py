@@ -1,4 +1,6 @@
+
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 from bd import get_connection
 import mysql.connector
 from  funciones import  (
@@ -11,10 +13,8 @@ from  funciones import  (
     validar_limite_semanal,
     hay_solapamiento
 )
-
 app = Flask(__name__)
-
-
+CORS(app, resources={r"/*": {"origins": "*"}})
 #testeo de la conexion
 
 @app.route('/test-db')
