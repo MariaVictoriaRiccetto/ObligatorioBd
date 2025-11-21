@@ -13,13 +13,14 @@ def esta_sancionado(ci):
     cursor.execute(query, (ci,))
     resultado=cursor.fetchone()
 
-    cursor.close()
-    conn.close()
+
 
     if resultado is not None:
         return True
+    cursor.close()
+    conn.close()
 
-    return False;
+    return False
 
 def sala_existe(id_sala):
     conn=get_connection()
@@ -122,15 +123,15 @@ def validar_tipo_sala(participantes, id_sala ):
             return False
 
         if tipo_sala=="posgrado":
-            if not any(r[0] in ("posgrado", "docentes") for r in roles):
+            if not any(r[0] in ("posgrado", "docente") for r in roles):
                 return False
         if tipo_sala== "docente":
             if not any(r[0] in ( "docente") for r in roles):
                 return False
 
-        cursor.close()
-        conn.close()
-        return True
+    cursor.close()
+    conn.close()
+    return True
 
 def validar_limite_diario(ci,fecha, id_turnos):
     conn=get_connection()
@@ -226,6 +227,33 @@ def hay_solapamiento(id_sala, fecha, id_turnos):
         return True
 
     return False
+
+def participante_existe(ci):
+    conn=get_connection()
+    cursor=conn.cursor()
+
+    cursor.execute("Select ci from participante "
+                   "where ci=%s ", (ci, ))
+    resultado=cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+    if resultado!= None:
+        return True
+
+    return False
+
+
+"""def ():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute()
+
+    cursor.close()
+    conn.close()
+
+    return jsonify({})"""
 
 
 
