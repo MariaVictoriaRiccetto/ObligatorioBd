@@ -208,7 +208,7 @@ def obtenerSalas():
 
 
 # --------------------------------------------------------------------------------------------------------------------------
-#----------------------------------------------RESERVAS--------------------------------------------------------------------
+#----------------------------------------------RESERVASS--------------------------------------------------------------------
 # --------------------------------------------------------------------------------------------------------------------------
 
 
@@ -218,6 +218,64 @@ def obtenerReservas():
     cursor = conn.cursor()
 
     cursor.execute("Select * from reserva ")
+    reservas=cursor.fetchall()
+
+
+    cursor.close()
+    conn.close()
+
+    return jsonify({"Estado":"Reservas obtenidos con éxito ", "Data":reservas})
+
+@app.route("/reservas/obtener/usuario/<int:ci_participante>", methods=["GET"])#checked
+def obtenerReservasCi(ci_participante):
+    conn = get_connection()
+
+    if conn is None:
+        return jsonify({"error": "No se pudo conectar a la base de datos"}), 500
+
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT rp.ci_participante, rp.fecha_solicitud_reserva, r.fecha, r.estado, s.nombre_sala, e.nombre_edificio from reserva_participante rp
+        join reserva r on rp.id_reserva=r.id_reserva
+        join sala s on r.id_sala=s.id_sala
+        join edificio e on s.id_edificio=e.id_edificio
+        where rp.ci_participante=%s
+            
+    """, (ci_participante,))
+
+    reservas = cursor.fetchall()
+
+
+    cursor.close()
+    conn.close()
+
+    if not reservas:
+        return jsonify({"mensaje": "El usuario no tiene reservas registradas"}), 200
+
+    return jsonify({"reservas": reservas}), 200
+
+
+@app.route("/reservas/obtener/activas", methods=["GET"]) #checked
+def obtenerReservasActivas():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("Select * from reserva where estado=%s", ("activa",))
+    reservas=cursor.fetchall()
+
+
+    cursor.close()
+    conn.close()
+
+    return jsonify({"Estado":"Reservas obtenidos con éxito ", "Data":reservas})
+
+@app.route("/reservas/obtener/inactivas", methods=["GET"])#checked
+def obtenerReservasInactiva():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("Select * from reserva where estado=%s",("cancelada",))
     reservas=cursor.fetchall()
 
 
@@ -295,14 +353,25 @@ def crearReservas():
         "reservas": id_reservas_creadas
     }), 201
 
-@app.route("/reservas/eliminar/<int:id_reserva>", methods=["DELETE"]) #Checked
+@app.route("/reservas/eliminar/<int:id_reserva>", methods=["PUT"]) #Checked
 def eliminarReserva(id_reserva):
 
     conn=get_connection()
     cursor=conn.cursor()
+    cursor.execute("select id_reserva from reserva where id_reserva=%s ",(id_reserva, ))
+    resultado= cursor.fetchone()
 
-    cursor.execute("DELETE FROM reserva WHERE id_reserva=%s ", (id_reserva,) )
+    if not resultado:
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "La reserva no existe"}), 404
 
+    if resultado[0] == 'finalizada':
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "No se puede cancelar una reserva finalizada"}), 400
+
+    cursor.execute("Update reserva set estado=%s where id_reserva=%s ", ("cancelada",id_reserva) )
     conn.commit()
 
     cursor.close()
@@ -397,14 +466,65 @@ def marcar_asistencia(id_reserva):
     conn.close()
 
     return jsonify({"status": "Asistencia registrada"}), 200
+
+from datetime import datetime, date
+
+@app.route("/reservas/finalizar_automatico", methods=["PUT"])
+def finalizar_reservas_automatico():
+
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+
+
+    hora_actual = datetime.now().time()
+    fecha_hoy = date.today()
+
+    # Seleccionar reservas "activas" cuyo turno ya terminó
+    cursor.execute("""
+        SELECT r.id_reserva, r.fecha, t.hora_fin
+        FROM reserva r
+        JOIN turno t ON t.id_turno = r.id_turno
+        WHERE r.estado = 'activa'
+          AND (
+                r.fecha < %s
+                OR (r.fecha = %s AND t.hora_fin < %s)
+              )
+    """, (fecha_hoy, fecha_hoy, hora_actual))
+
+    reservas_finalizables = cursor.fetchall()
+
+    ids = [res["id_reserva"] for res in reservas_finalizables]
+
+    if not ids:
+        cursor.close()
+        conn.close()
+        return jsonify({"status": "No hay reservas para finalizar"}), 200
+
+    # Actualizar estado a FINALIZADA
+    cursor.execute("""
+        UPDATE reserva
+        SET estado = 'finalizada'
+        WHERE id_reserva IN (%s)
+    """ % ",".join(["%s"] * len(ids)), ids)
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return jsonify({
+        "status": "Reservas finalizadas correctamente",
+        "reservas_finalizadas": ids
+    }), 200
+
 # --------------------------------------------------------------------------------------------------------------------------
-#----------------------------------------------SANCIONES--------------------------------------------------------------------
+#----------------------------------------------SANCIONESS--------------------------------------------------------------------
 # --------------------------------------------------------------------------------------------------------------------------
 
 #cada vez que el admin llama a este endpoint, el endpoint genera automaticamente las sanciones y las añade a las tablas, la logica de las sanciones
 # es que si el usuario tiene la asistencia en 0~ no asistio, y la fecha actual es sueriro a a la fecha de la reserva, ala usuario se
 # le sanciona, en el caso de que sea 0 pero no haya ocurrido , no pasa nada, o en el caso de que ocurrio y sea 1, tampoco el usuairo va a s er sancionado
-@app.route("/sanciones/generar", methods=["POST"]) #checked
+@app.route("/sanciones/generar", methods=["POST"])
 def generar_sanciones():
     conn = get_connection()
     cursor = conn.cursor()
@@ -416,25 +536,26 @@ def generar_sanciones():
                DATE_ADD(CURRENT_DATE, INTERVAL 2 MONTH)
         FROM reserva_participante rp
         JOIN reserva r ON r.id_reserva = rp.id_reserva
-        WHERE r.fecha < CURRENT_DATE
+        WHERE r.estado = 'finalizada'
           AND rp.asistencia = 0
           AND rp.ci_participante NOT IN (
-                SELECT ci_participante
-                FROM sancion_participante
-                WHERE fecha_fin >= CURRENT_DATE
+              SELECT ci_participante
+              FROM sancion_participante
+              WHERE fecha_fin >= CURRENT_DATE
           );
     """)
 
-    filas = cursor.rowcount  # cuantos sanciono
-
+    sancionadas = cursor.rowcount
     conn.commit()
+
     cursor.close()
     conn.close()
 
     return jsonify({
         "status": "ok",
-        "sanciones_creadas": filas
+        "sanciones_creadas": sancionadas
     }), 200
+
 
 @app.route("/sanciones/crear/<ci_participante>", methods=["POST"]) #checked
 def sancionarAProposito(ci_participante):
@@ -703,19 +824,30 @@ def porcentajeDeOcupacion():
 @app.route("/reportes/reservas/asistencias-prof-alumnos",methods=["GET"])
 def cantidadReservasAsistencias():
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(dictionary=True)
 
-    cursor.execute("""select ppa.rol , count(rp.id_reserva) as total_reservas, sum(rp.asistencia= TRUE) as total_asistencias,sum(rp.asistencia= FALSE) as inasistencias
-        from participante_programa_academico ppa
-        join reserva_participante rp on ppa.ci_participante = rp.ci_participante -- FUNCIONA NO TOCAR
-        group by ppa.rol """)
+    cursor.execute("""
+        SELECT 
+            ppa.rol,
+            COUNT(rp.id_reserva) AS total_reservas,
+            SUM(rp.asistencia = TRUE) AS total_asistencias,
+            SUM(rp.asistencia = FALSE) AS total_inasistencias
+        FROM participante_programa_academico ppa
+        JOIN reserva_participante rp 
+            ON ppa.ci_participante = rp.ci_participante
+        GROUP BY ppa.rol;
+    """)
 
-    resultado=cursor.fetchall()
+    resultado = cursor.fetchall()
 
     cursor.close()
     conn.close()
 
-    return jsonify({"estado":"consulta realizada con exito", "data":resultado})
+    return jsonify({
+        "estado": "consulta realizada con exito",
+        "data": resultado
+    }), 200
+
 
 #• Cantidad de sanciones para profesores y alumnos (grado y posgrado)
 @app.route("/reportes/sanciones/prof-alum", methods=["GET"])
