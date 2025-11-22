@@ -249,11 +249,13 @@ def participante_existe(ci):
     cursor = conn.cursor()
 
     cursor.execute()
+    resultado=cursor.fetchall()
 
     cursor.close()
     conn.close()
 
-    return jsonify({})"""
+    return jsonify({"Estado":"", "data":resultado})
+  """
 
 
 

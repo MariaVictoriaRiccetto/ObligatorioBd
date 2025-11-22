@@ -717,6 +717,106 @@ def cantidadReservasAsistencias():
 
     return jsonify({"estado":"consulta realizada con exito", "data":resultado})
 
+#• Cantidad de sanciones para profesores y alumnos (grado y posgrado)
+@app.route("/reportes/sanciones/prof-alum", methods=["GET"])
+def sancinesProfAlum():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""SELECT ppa.rol,
+    COUNT(*) AS cantidad_sanciones
+    FROM participante_programa_academico ppa
+    JOIN sancion_participante sp 
+    ON ppa.ci_participante = sp.ci_participante
+    GROUP BY ppa.rol
+    ORDER BY ppa.rol;
+""")
+    resultado=cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return jsonify({"Estado":"", "data":resultado})
+
+#orcentaje de reservas efectivamente utilizadas vs. canceladas/no asistidas
+@app.route("/reportes/reservas/efectivasNo", methods=["GET"])
+def obtenerReservasEfectivas():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""select ppa.rol  , count(rp.id_reserva) as total_reservas, round(avg(rp.asistencia= TRUE),1) as porcentaje_asistencias,round(avg(rp.asistencia= FALSE),1) as porcentaje_inasistencias
+from participante_programa_academico ppa
+join reserva_participante rp on ppa.ci_participante = rp.ci_participante -- FUNCIONA NO TOCAR
+group by ppa.rol ;""")
+    resultado=cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return jsonify({"Estado":"", "data":resultado})
+
+
+#-- Participante con mas inasistencias (extra 1)
+@app.route("/reportes/participante/masInasistencia", methods=["GET"])
+def obtenerParticipanteMasInasistencia():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""select ppa.rol, rp.ci_participante, sum(rp.asistencia= FALSE) as inasistencias
+    from participante_programa_academico ppa
+    join reserva_participante rp on ppa.ci_participante = rp.ci_participante
+    group by ppa.rol, rp.ci_participante
+    order by inasistencias desc
+    limit 1;""")
+
+    resultado=cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return jsonify({"Estado":"", "data":resultado})
+
+
+#-- Ranking top 3 de participantes con mas reservas activas (extra 2)
+@app.route("/reportes/participante/reservaActiva", methods=["GET"])
+def obtenerParticipantesMasReservasActivas():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""select rp.ci_participante,ppa.rol,COUNT(*) AS total_reservas
+from reserva_participante rp
+join participante_programa_academico ppa ON ppa.ci_participante = rp.ci_participante
+group by rp.ci_participante, ppa.rol
+order by total_reservas DESC
+limit 3;""")
+
+    resultado=cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return jsonify({"Estado":"", "data":resultado})
+
+
+#-- cantidad de salas por edificio (extra 3)
+
+
+@app.route("/reportes/sala/cantidadXEdificio", methods=["GET"])
+def obtenerCantidadSalaPorEdificio():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""select  e.nombre_edificio,COUNT(*) AS cantidad_salas
+from sala s
+join edificio e ON s.id_edificio = e.id_edificio
+group by e.nombre_edificio;""")
+
+    resultado=cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return jsonify({"Estado":"", "data":resultado})
 
 
 
