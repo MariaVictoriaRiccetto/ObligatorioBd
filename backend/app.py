@@ -54,6 +54,9 @@ def listar_participantes():
 def crear_participante():
     data = request.get_json()
 
+
+    contraseña=data.get("contraseña")
+
     ci = data.get("ci")
     nombre = data.get("nombre")
     apellido = data.get("apellido")
@@ -68,6 +71,10 @@ def crear_participante():
         VALUES (%s, %s, %s, %s)
         """
         cursor.execute(query, (ci, nombre, apellido, email))
+        conn.commit()
+
+        cursor.execute("INSERT INTO login (correo, contraseña) "
+                       "values (%s, %s) ", (email, contraseña))
         conn.commit()
 
         return jsonify({"status": "Participante creado correctamente"}), 201
@@ -656,18 +663,21 @@ def obtenerCantidadReservasFacultadCarrera():
     conn = get_connection()
     cursor = conn.cursor()
 
-    cursor.execute("""SELECT 
-    f.nombre AS facultad,
-    c.nombre AS carrera,
-    COUNT(r.id_reserva) AS cantidad_reservas
-FROM reserva_participante rp
-JOIN participante p ON r.ci = p.ci
-JOIN carrera c ON p.id_carrera = c.id_carrera
-JOIN facultad f ON c.id_facultad = f.id_facultad
-GROUP BY f.nombre, c.nombre
-ORDER BY f.nombre, c.nombre;
+    #Cantidad de reservas por carrera y facultad
+    cursor.execute("""select f.nombre as facultad,
+                   pa.nombre_programa as carrera,
+                   count(distinct rp.id_reserva) as cantidad_reservas
+            from reserva_participante rp
+            join participante_programa_academico ppa
+              on rp.ci_participante = ppa.ci_participante
+            join programa_academico pa
+              on ppa.id_programa_academico = pa.id_programa_academico
+            join facultad f
+              on pa.id_facultad = f.id_facultad
+            group by f.nombre, pa.nombre_programa
+            order by f.nombre, pa.nombre_programa;
 
-""")
+                   """)
 
     resultado=cursor.fetchall()
 
@@ -675,6 +685,37 @@ ORDER BY f.nombre, c.nombre;
     conn.close()
 
     return jsonify({"Estado": "Se realizo la consulta correctamente ", "El promedio de la sala es  ": resultado})
+
+#Porcentaje de ocupación de salas por edificio
+@app.route("/reportes/salas/porcentaje-ocupacion-edificio",methods=["GET"])
+def porcentajeDeOcupacion():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("")
+
+    cursor.close()
+    conn.close()
+
+    return jsonify({})
+#Cantidad de reservas y asistencias de profesores y alumnos (grado y posgrado)
+
+@app.route("/reportes/reservas/asistencias-prof-alumnos",methods=["GET"])
+def cantidadReservasAsistencias():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""select ppa.rol , count(rp.id_reserva) as total_reservas, sum(rp.asistencia= TRUE) as total_asistencias,sum(rp.asistencia= FALSE) as inasistencias
+        from participante_programa_academico ppa
+        join reserva_participante rp on ppa.ci_participante = rp.ci_participante -- FUNCIONA NO TOCAR
+        group by ppa.rol """)
+
+    resultado=cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return jsonify({"estado":"consulta realizada con exito", "data":resultado})
 
 
 
