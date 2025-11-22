@@ -404,4 +404,3 @@ ALTER TABLE edificio
 ADD COLUMN id_facultad INT,
 ADD FOREIGN KEY (id_facultad) REFERENCES facultad(id_facultad);
 
-Insert into edificio (id)
