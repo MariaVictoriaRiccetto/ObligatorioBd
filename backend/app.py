@@ -3,10 +3,11 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from bd import get_connection
 import jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import mysql.connector
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
+import logging
 from  funciones import  (
     esta_sancionado,
     sala_existe,
@@ -70,6 +71,8 @@ def admin_required(f):
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
+# Configure logging to stdout
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 #testeo de la conexion
 
 @app.route('/test-db')
@@ -108,12 +111,10 @@ def listar_participantes():
 
 
 def crear_participante():
-
     data = request.get_json()
 
-
-    contraseña=data.get("contraseña")
-    password_hash = generate_password_hash(contraseña)
+    contraseña = data.get("contraseña")
+    password_hash = generate_password_hash(contraseña) if contraseña else None
 
     ci = data.get("ci")
     nombre = data.get("nombre")
@@ -124,21 +125,77 @@ def crear_participante():
     cursor = conn.cursor()
 
     try:
+        # Insert participante
         query = """
         INSERT INTO participante (ci, nombre, apellido, email)
         VALUES (%s, %s, %s, %s)
         """
         cursor.execute(query, (ci, nombre, apellido, email))
-        conn.commit()
 
-        cursor.execute("INSERT INTO login (correo, password_hash, rol) "
-                       "values (%s, %s, %s) ", (email, password_hash, "estudiante"))
-        conn.commit()
+        # Detecto dinámicamente el nombre de la columna de contraseña en la tabla login
+        try:
+            cursor.execute("SHOW COLUMNS FROM login")
+            cols = cursor.fetchall()
+            col_names = set()
+            for c in cols:
+                if isinstance(c, dict):
+                    col_names.add(c.get('Field'))
+                else:
+                    col_names.add(c[0])
+        except Exception as e:
+            conn.rollback()
+            return jsonify({"error": "Error interno comprobando esquema de login"}), 500
 
+        # Detectar columna de password/contraseña automáticamente
+        password_col = None
+        # buscar coincidencias por substrings comunes (inglés/español)
+        for col in col_names:
+            lname = col.lower()
+            if any(sub in lname for sub in ("pass", "pwd", "contr", "hash")):
+                password_col = col
+                break
+
+        # Si no detectamos por substrings, intentar nombres comunes explícitos
+        if password_col is None:
+            candidates = ["password_hash", "password", "pwd_hash", "passwordHash", "contraseña"]
+            for c in candidates:
+                if c in col_names:
+                    password_col = c
+                    break
+        if password_col is None:
+            conn.rollback()
+            return jsonify({"error": "Esquema inesperado: no se encontró columna de contraseña en tabla login"}), 500
+
+        # Construyo la inserción sólo con las columnas que existan (rol puede no existir)
+        lower_cols = {c.lower() for c in col_names}
+        cols_to_insert = ['correo', password_col]
+        params = [email, password_hash]
+        if 'rol' in lower_cols:
+            cols_to_insert.append('rol')
+            params.append('estudiante')
+
+        cols_quoted = ', '.join(f'`{c}`' for c in cols_to_insert)
+        placeholders = ', '.join(['%s'] * len(params))
+        insert_login_sql = f"INSERT INTO login ({cols_quoted}) VALUES ({placeholders})"
+        try:
+            cursor.execute(insert_login_sql, tuple(params))
+        except Exception as e:
+            conn.rollback()
+            return jsonify({"error": "Error al crear credenciales de login"}), 500
+
+        # Ambas inserciones OK -> confirmamos
+        conn.commit()
         return jsonify({"status": "Participante creado correctamente"}), 201
 
-    except mysql.connector.IntegrityError:
-        return jsonify({"error": "La CI ya está registrada"}), 400
+    except mysql.connector.IntegrityError as ie:
+        # Posible duplicado en participante (CI) u otra violación de integridad
+        conn.rollback()
+        return jsonify({"error": "La CI ya está registrada o violación de integridad"}), 400
+
+    except Exception as e:
+        # Error inesperado
+        conn.rollback()
+        return jsonify({"error": "Error interno al crear participante"}), 500
 
     finally:
         cursor.close()
@@ -157,7 +214,6 @@ def eliminar_participante(ci):
 
     cursor.close()
     conn.close()
-
     return jsonify({"status": "Participante eliminado correctamente"})
 
 
@@ -179,16 +235,19 @@ def modificar_participante(ci):
         SET nombre=%s, apellido=%s, email=%s
         WHERE ci=%s;
     """
-
-    cursor.execute(query, (nombre, apellido, email, ci))
+    cursor.execute(query, (nombre, apellido, email, ci))  
     conn.commit()
+
+    if cursor.rowcount == 0:
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "No se encontró participante con ese CI"}), 404
 
     cursor.close()
     conn.close()
-
     return jsonify({"status": "Participante modificado correctamente"})
 
-# --------------------------------------------------------------------------------------------------------------------------
+        
 #----------------------------------------------SALAS--------------------------------------------------------------------
 # --------------------------------------------------------------------------------------------------------------------------
 
@@ -722,7 +781,7 @@ def eliminarSanciones(ci_participante):
     cursor.close()
     conn.close()
 
-    return jsonify({"Estado":" La sancion fue removida con exite "})
+    return jsonify({"Estado":" La sancion fue removida con éxito"})
 
 #obtengo los datos de un participante en especifico, esto es para ver sus sanciones, el vencimiento de la misma, etc
 
@@ -1103,7 +1162,6 @@ group by e.nombre_edificio;""")
 # --------------------------------------------------------------------------------------------------------------------------
 #----------------------------------------------LOGINNNN --------------------------------------------------------------------
 # --------------------------------------------------------------------------------------------------------------------------
-
 @app.route("/auth/login", methods=["POST"])
 def login():
     data = request.get_json()
@@ -1113,26 +1171,52 @@ def login():
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
 
-    cursor.execute("SELECT * FROM login WHERE correo = %s", (correo,))
+    # Buscar usuario en tabla login
+    cursor.execute("SELECT correo, contraseña FROM login WHERE correo = %s", (correo,))
     user = cursor.fetchone()
 
     if not user:
+        cursor.close()
+        conn.close()
         return jsonify({"error": "Usuario no encontrado"}), 404
 
-    if not check_password_hash(user["password_hash"], password):
+    # Validar contraseña
+    if not check_password_hash(user["contraseña"], password):
+        cursor.close()
+        conn.close()
         return jsonify({"error": "Contraseña incorrecta"}), 401
 
+    # Buscar CI en participante
+    cursor.execute("SELECT ci FROM participante WHERE email = %s", (correo,))
+    participante = cursor.fetchone()
+    if not participante:
+        cursor.close()
+        conn.close()
+        return jsonify({"error": "Participante no encontrado"}), 404
+
+    ci = participante["ci"]
+
+    # Buscar rol en participante_programa_academico
+    cursor.execute("SELECT rol FROM participante_programa_academico WHERE ci_participante = %s", (ci,))
+    programa = cursor.fetchone()
+    rol = programa["rol"] if programa else "estudiante"
+
+    # Generar token con rol correcto
     token = jwt.encode({
         "correo": correo,
-        "rol": user["rol"],
-        "exp": datetime.utcnow() + timedelta(hours=12)
+        "rol": rol,
+        "exp": datetime.now(timezone.utc) + timedelta(hours=12)
     }, SECRET_KEY, algorithm="HS256")
+
+    cursor.close()
+    conn.close()
 
     return jsonify({
         "mensaje": "Login exitoso",
         "token": token,
-        "rol": user["rol"]
+        "rol": rol
     }), 200
+
 
 @app.route("/auth/me", methods=["GET"])
 @login_required

@@ -174,6 +174,12 @@ VALUES
 (17, 89123456, 6, 'estudiante'),
 (18, 91234567, 7, 'estudiante');
 update participante_programa_academico set rol= 'docente' where ci_participante in (91234567,67891234);
+#cambio roles para tener admins
+update participante_programa_academico set rol= 'admin' where ci_participante in (34567891,12345678,23456789);
+#insert nuevo
+INSERT INTO participante_programa_academico(id_alumno_programa, ci_participante, id_programa_academico, rol)
+VALUES(19,98653223, 1, 'admin');
+
 
 -- hago este update ppa para que algunos de los datos queden con el rol docente y asi quede como se pide en la consigna
 INSERT INTO programa_academico(nombre_programa, id_facultad, tipo) VALUES
@@ -282,6 +288,7 @@ INSERT INTO reserva_participante VALUES
 
 (91234567, 15, '2025-10-06 09:00:00', FALSE);
 update  reserva_participante set ci_participante=12345678 where ci_participante in (78912345,89123456);
+
 INSERT INTO sancion_participante(ci_participante, fecha_inicio, fecha_fin) VALUES
 (89123456, '2025-10-06', '2025-12-06'),
 (91234567, '2025-10-06', '2025-12-06'),
@@ -416,4 +423,10 @@ WHERE r.fecha < CURRENT_DATE
 ALTER TABLE edificio
 ADD COLUMN id_facultad INT,
 ADD FOREIGN KEY (id_facultad) REFERENCES facultad(id_facultad);
+
+#cambio el largo de la contraseña par que entre el hash
+ALTER TABLE login
+MODIFY COLUMN contraseña
+VARCHAR(255) NOT NULL;
+
 
