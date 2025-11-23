@@ -2,7 +2,11 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from bd import get_connection
+import jwt
+from datetime import datetime, timedelta
 import mysql.connector
+from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 from  funciones import  (
     esta_sancionado,
     sala_existe,
@@ -13,8 +17,57 @@ from  funciones import  (
     validar_limite_semanal,
     hay_solapamiento,
     participante_existe
-
 )
+
+SECRET_KEY = "llaveNatu"
+
+# ------------------------
+# MIDDLEWARES
+# ------------------------
+def login_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        auth_header = request.headers.get("Authorization")
+
+        if not auth_header:
+            return jsonify({"error": "Token requerido"}), 401
+
+        try:
+            token = auth_header.replace("Bearer ", "")
+            data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        except jwt.ExpiredSignatureError:
+            return jsonify({"error": "Token expirado"}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({"error": "Token inválido"}), 401
+
+        request.user = data
+        return f(*args, **kwargs)
+    return wrapper
+
+
+def admin_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        auth_header = request.headers.get("Authorization")
+
+        if not auth_header:
+            return jsonify({"error": "Token requerido"}), 401
+
+        try:
+            token = auth_header.replace("Bearer ", "")
+            data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        except jwt.ExpiredSignatureError:
+            return jsonify({"error": "Token expirado"}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({"error": "Token inválido"}), 401
+
+        if data.get("rol") != "admin":
+            return jsonify({"error": "Acceso denegado: Se requiere rol ADMIN"}), 403
+
+        request.user = data
+        return f(*args, **kwargs)
+    return wrapper
+
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 #testeo de la conexion
@@ -35,9 +88,10 @@ def test_db():
     return jsonify({"conexion_exitosa": True, "servidor_hora": str(resultado[0])})
 
 # --------------------------------------------------------------------------------------------------------------------------
-#----------------------------------------------PARTICIPANTES--------------------------------------------------------------------
+#----------------------------------------------PARTICIPANTESSS--------------------------------------------------------------------
 # --------------------------------------------------------------------------------------------------------------------------
 @app.route('/participantes', methods=['GET'])#checked
+@admin_required
 def listar_participantes():
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
@@ -51,11 +105,15 @@ def listar_participantes():
 
 
 @app.route('/participantes/crear', methods=['POST'])#checked
+
+
 def crear_participante():
+
     data = request.get_json()
 
 
     contraseña=data.get("contraseña")
+    password_hash = generate_password_hash(contraseña)
 
     ci = data.get("ci")
     nombre = data.get("nombre")
@@ -73,8 +131,8 @@ def crear_participante():
         cursor.execute(query, (ci, nombre, apellido, email))
         conn.commit()
 
-        cursor.execute("INSERT INTO login (correo, contraseña) "
-                       "values (%s, %s) ", (email, contraseña))
+        cursor.execute("INSERT INTO login (correo, password_hash, rol) "
+                       "values (%s, %s, %s) ", (email, password_hash, "estudiante"))
         conn.commit()
 
         return jsonify({"status": "Participante creado correctamente"}), 201
@@ -87,6 +145,8 @@ def crear_participante():
         conn.close()
 
 @app.route('/participantes/delete/<ci>', methods=['DELETE'])#checked
+@admin_required
+
 def eliminar_participante(ci):
     conn = get_connection()
     cursor = conn.cursor()
@@ -102,6 +162,8 @@ def eliminar_participante(ci):
 
 
 @app.route('/participantes/modificar/<int:ci>', methods=['PUT'])#checked
+@admin_required
+
 def modificar_participante(ci):
     data = request.get_json()
 
@@ -132,6 +194,8 @@ def modificar_participante(ci):
 
 #cosas que faltan: Obtener todas las salas, obtener todas las reservas
 @app.route('/sala/crear', methods=['POST'])#checked
+@admin_required
+
 def crearSala():
     data=request.get_json()#transforma lo que le enviamos en un diccionario
     nombre_sala=data.get("nombre")
@@ -154,6 +218,8 @@ def crearSala():
     return jsonify({"status": "Sala creada correctamente"})
 
 @app.route('/sala/delete/<int:id_sala>',methods=['DELETE']) #checked
+@admin_required
+
 def eliminarSala(id_sala):
 
     conn=get_connection()
@@ -170,6 +236,8 @@ def eliminarSala(id_sala):
     return jsonify({"status":"Sala borrada correctamente"})
 
 @app.route('/sala/modificar/<id_sala>', methods=['PUT'])#checked
+@admin_required
+
 def modificarSala(id_sala):
     data=request.get_json()
     nombre=data.get("nombre")
@@ -191,12 +259,29 @@ def modificarSala(id_sala):
     conn.close()
     return jsonify({"status": "Sala modificada correctamente"})
 
-@app.route("/salas/obtener", methods=["GET"])
+@app.route("/salas/obtenerAdmin", methods=["GET"])#checked
+@admin_required
+
 def obtenerSalas():
 
     conn = get_connection()
     cursor=conn.cursor()
     cursor.execute("Select * From sala")
+    salas = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return jsonify({"Estado": "Se obtuvieron todas las salas", "Datos": salas})
+
+@app.route("/salas/obtenerTodos", methods=["GET"])
+@login_required
+
+def obtenerSalasId():
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("Select s.id_sala, s.nombre_sala, e.nombre_edificio From sala s "
+                   "join edificio e on s.id_edificio= e.id_edificio")
     salas = cursor.fetchall()
 
     cursor.close()
@@ -213,6 +298,8 @@ def obtenerSalas():
 
 
 @app.route("/reservas/obtener", methods=["GET"])
+@admin_required
+
 def obtenerReservas():
     conn = get_connection()
     cursor = conn.cursor()
@@ -226,8 +313,12 @@ def obtenerReservas():
 
     return jsonify({"Estado":"Reservas obtenidos con éxito ", "Data":reservas})
 
-@app.route("/reservas/obtener/usuario/<int:ci_participante>", methods=["GET"])#checked
+
+
+@app.route("/reservas/obtener/usuario/<int:ci_participante>", methods=["GET"])
+@login_required
 def obtenerReservasCi(ci_participante):
+
     conn = get_connection()
 
     if conn is None:
@@ -235,17 +326,30 @@ def obtenerReservasCi(ci_participante):
 
     cursor = conn.cursor(dictionary=True)
 
+    correo_token = request.user["correo"]
+
+    cursor.execute("SELECT ci FROM participante WHERE email = %s", (correo_token,))
+    row = cursor.fetchone()
+
+    if not row:
+        return jsonify({"error": "Usuario del token no encontrado"}), 404
+
+    ci_token = row["ci"]
+
+    if ci_token != ci_participante:
+        return jsonify({"error": "Acceso denegado: no puede ver reservas de otros usuarios"}), 403
+
     cursor.execute("""
-        SELECT rp.ci_participante, rp.fecha_solicitud_reserva, r.fecha, r.estado, s.nombre_sala, e.nombre_edificio from reserva_participante rp
-        join reserva r on rp.id_reserva=r.id_reserva
-        join sala s on r.id_sala=s.id_sala
-        join edificio e on s.id_edificio=e.id_edificio
-        where rp.ci_participante=%s
-            
+        SELECT rp.ci_participante, rp.fecha_solicitud_reserva, r.fecha, r.estado,
+               s.nombre_sala, e.nombre_edificio
+        FROM reserva_participante rp
+        JOIN reserva r ON rp.id_reserva = r.id_reserva
+        JOIN sala s ON r.id_sala = s.id_sala
+        JOIN edificio e ON s.id_edificio = e.id_edificio
+        WHERE rp.ci_participante = %s
     """, (ci_participante,))
 
     reservas = cursor.fetchall()
-
 
     cursor.close()
     conn.close()
@@ -257,6 +361,8 @@ def obtenerReservasCi(ci_participante):
 
 
 @app.route("/reservas/obtener/activas", methods=["GET"]) #checked
+@admin_required
+
 def obtenerReservasActivas():
     conn = get_connection()
     cursor = conn.cursor()
@@ -271,6 +377,8 @@ def obtenerReservasActivas():
     return jsonify({"Estado":"Reservas obtenidos con éxito ", "Data":reservas})
 
 @app.route("/reservas/obtener/inactivas", methods=["GET"])#checked
+@admin_required
+
 def obtenerReservasInactiva():
     conn = get_connection()
     cursor = conn.cursor()
@@ -285,6 +393,9 @@ def obtenerReservasInactiva():
     return jsonify({"Estado":"Reservas obtenidos con éxito ", "Data":reservas})
 
 @app.route("/reservas/crear", methods=["POST"])  #Checked
+@login_required
+
+
 def crearReservas():
     data = request.get_json()
 
@@ -354,11 +465,14 @@ def crearReservas():
     }), 201
 
 @app.route("/reservas/eliminar/<int:id_reserva>", methods=["PUT"]) #Checked
+@login_required
+
+
 def eliminarReserva(id_reserva):
 
     conn=get_connection()
     cursor=conn.cursor()
-    cursor.execute("select id_reserva from reserva where id_reserva=%s ",(id_reserva, ))
+    cursor.execute("select estado from reserva where id_reserva=%s ",(id_reserva, ))
     resultado= cursor.fetchone()
 
     if not resultado:
@@ -380,6 +494,8 @@ def eliminarReserva(id_reserva):
     return jsonify({"status": " Reserva eliminada correctamente "})
 
 @app.route("/reservas/modificar/<int:id_reserva>", methods=["PUT"]) #checked
+@login_required
+
 def modificarReserva(id_reserva):
     data = request.get_json()
 
@@ -451,6 +567,7 @@ def modificarReserva(id_reserva):
 #metodo de admin para marcar asistencia
 #este metodo es para marcar la asistencia a la reserva de las salitas, todo esto va de las manos de las sanciones
 @app.route("/reservas/asistencia/<int:id_reserva>", methods=["PUT"]) #checked
+@admin_required
 def marcar_asistencia(id_reserva):
     conn = get_connection()
     cursor = conn.cursor()
@@ -470,6 +587,7 @@ def marcar_asistencia(id_reserva):
 from datetime import datetime, date
 
 @app.route("/reservas/finalizar_automatico", methods=["PUT"])
+@admin_required
 def finalizar_reservas_automatico():
 
     conn = get_connection()
@@ -525,6 +643,7 @@ def finalizar_reservas_automatico():
 # es que si el usuario tiene la asistencia en 0~ no asistio, y la fecha actual es sueriro a a la fecha de la reserva, ala usuario se
 # le sanciona, en el caso de que sea 0 pero no haya ocurrido , no pasa nada, o en el caso de que ocurrio y sea 1, tampoco el usuairo va a s er sancionado
 @app.route("/sanciones/generar", methods=["POST"])
+@admin_required
 def generar_sanciones():
     conn = get_connection()
     cursor = conn.cursor()
@@ -558,6 +677,7 @@ def generar_sanciones():
 
 
 @app.route("/sanciones/crear/<ci_participante>", methods=["POST"]) #checked
+@admin_required
 def sancionarAProposito(ci_participante):
     conn=get_connection()
     cursor=conn.cursor()
@@ -583,6 +703,7 @@ def sancionarAProposito(ci_participante):
 
 #le paso la cedula del participante, chequeo si el participante existe o tiene sanciones, en el caos de que no exsite devuelve un mensaje, en el caso de que si exista su sancion la elimina
 @app.route("/sanciones/eliminar/<ci_participante>",methods=["DELETE"])#checked
+@admin_required
 def eliminarSanciones(ci_participante):
     conn=get_connection()
     cursor=conn.cursor()
@@ -606,6 +727,7 @@ def eliminarSanciones(ci_participante):
 #obtengo los datos de un participante en especifico, esto es para ver sus sanciones, el vencimiento de la misma, etc
 
 @app.route("/sanciones/<ci_participante>", methods=["GET"])#checked
+@admin_required
 def listarSanciones(ci_participante):
     conn = get_connection()
     cursor = conn.cursor()
@@ -629,6 +751,7 @@ def listarSanciones(ci_participante):
 #Este endpoint es para borrar las sanciones en automatico, lo que hace es chequear si la fecha de
 # finalizacion de la sancion es mayor a la fecha actual, en el caso de que la fecha la supere, esa sancion sera removida
 @app.route("/sanciones/limpiar", methods=["DELETE"])#checked
+@admin_required
 def limpiarSancionesVencidas():
     conn = get_connection()
     cursor = conn.cursor()
@@ -658,6 +781,7 @@ def limpiarSancionesVencidas():
 
 #Este endpoint es para poder modificar las sanciones, lo que hace es permitirme modificar la fehca de incio y la fecha final de una sancion, la verdadera utilidad seria modificar la fecha final para poder extender una sancion
 @app.route("/sanciones/modificar/<ci_participante>", methods=["PUT"])#checked
+@admin_required
 def modificarSancion(ci_participante):
     datos = request.json
     nueva_fecha_inicio = datos.get("fecha_inicio")
@@ -701,6 +825,7 @@ def modificarSancion(ci_participante):
 #nombres que numeros.
 
 @app.route("/sanciones/obtener", methods=["get"])#checked
+@admin_required
 def listarObtener():
     conn = get_connection()
     cursor = conn.cursor()
@@ -722,6 +847,7 @@ def listarObtener():
 
 #EndPoint para obtener salas más reservadas
 @app.route("/reportes/salasMaxReserva", methods=["GET"])
+@admin_required
 def obtenerMaxReserva():
     conn = get_connection()
     cursor = conn.cursor()
@@ -741,6 +867,7 @@ def obtenerMaxReserva():
 
 #Obtener turnos mas demandados
 @app.route("/reportes/turnosMax", methods=["GET"])
+@admin_required
 def obtenerTurnosMasDemandados():
     conn = get_connection()
     cursor = conn.cursor()
@@ -760,6 +887,7 @@ def obtenerTurnosMasDemandados():
     return jsonify({"Estado": "Se realizo la consulta correctamente ", "Los turnos mas demandados son ": resultado})
 
 @app.route("/reportes/sala/promedio", methods=["GET"])
+@admin_required
 def obtenerPromedioSala():
     conn = get_connection()
     cursor = conn.cursor()
@@ -780,6 +908,7 @@ def obtenerPromedioSala():
     return jsonify({"Estado": "Se realizo la consulta correctamente ", "El promedio de la sala es  ": resultado})
 
 @app.route("/reportes/reservas/facultad-carrera")
+@admin_required
 def obtenerCantidadReservasFacultadCarrera():
     conn = get_connection()
     cursor = conn.cursor()
@@ -813,16 +942,31 @@ def porcentajeDeOcupacion():
     conn = get_connection()
     cursor = conn.cursor()
 
-    cursor.execute("")
+    cursor.execute("""select s.nombre_sala, ROUND(avg(pr.cantidad_participante),1) as promedio_participantes
+from sala s
+join reserva r on r.id_sala=s.id_sala
+left join (select id_reserva,count(ci_participante) as cantidad_participante                        -- FUNCIONA NO TOCAR
+           from reserva_participante
+           group by id_reserva)
+pr on pr.id_reserva=r.id_reserva -- Unimos cada reserva con la cantidad de participantes que tiene (por id_reserva)
+group by s.nombre_sala ;""")
+    resultado = cursor.fetchall()
 
     cursor.close()
     conn.close()
 
-    return jsonify({})
+    return jsonify({
+        "estado": "consulta realizada con exito",
+        "data": resultado
+    }), 200
+
+
 #Cantidad de reservas y asistencias de profesores y alumnos (grado y posgrado)
 
 @app.route("/reportes/reservas/asistencias-prof-alumnos",methods=["GET"])
+@admin_required
 def cantidadReservasAsistencias():
+
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
 
@@ -851,6 +995,7 @@ def cantidadReservasAsistencias():
 
 #• Cantidad de sanciones para profesores y alumnos (grado y posgrado)
 @app.route("/reportes/sanciones/prof-alum", methods=["GET"])
+@admin_required
 def sancinesProfAlum():
     conn = get_connection()
     cursor = conn.cursor()
@@ -872,6 +1017,7 @@ def sancinesProfAlum():
 
 #orcentaje de reservas efectivamente utilizadas vs. canceladas/no asistidas
 @app.route("/reportes/reservas/efectivasNo", methods=["GET"])
+@admin_required
 def obtenerReservasEfectivas():
     conn = get_connection()
     cursor = conn.cursor()
@@ -890,6 +1036,7 @@ group by ppa.rol ;""")
 
 #-- Participante con mas inasistencias (extra 1)
 @app.route("/reportes/participante/masInasistencia", methods=["GET"])
+@admin_required
 def obtenerParticipanteMasInasistencia():
     conn = get_connection()
     cursor = conn.cursor()
@@ -911,7 +1058,9 @@ def obtenerParticipanteMasInasistencia():
 
 #-- Ranking top 3 de participantes con mas reservas activas (extra 2)
 @app.route("/reportes/participante/reservaActiva", methods=["GET"])
+@admin_required
 def obtenerParticipantesMasReservasActivas():
+
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -934,6 +1083,7 @@ limit 3;""")
 
 
 @app.route("/reportes/sala/cantidadXEdificio", methods=["GET"])
+@admin_required
 def obtenerCantidadSalaPorEdificio():
     conn = get_connection()
     cursor = conn.cursor()
@@ -949,6 +1099,73 @@ group by e.nombre_edificio;""")
     conn.close()
 
     return jsonify({"Estado":"", "data":resultado})
+
+# --------------------------------------------------------------------------------------------------------------------------
+#----------------------------------------------LOGINNNN --------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------------
+
+@app.route("/auth/login", methods=["POST"])
+def login():
+    data = request.get_json()
+    correo = data.get("correo")
+    password = data.get("password")
+
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("SELECT * FROM login WHERE correo = %s", (correo,))
+    user = cursor.fetchone()
+
+    if not user:
+        return jsonify({"error": "Usuario no encontrado"}), 404
+
+    if not check_password_hash(user["password_hash"], password):
+        return jsonify({"error": "Contraseña incorrecta"}), 401
+
+    token = jwt.encode({
+        "correo": correo,
+        "rol": user["rol"],
+        "exp": datetime.utcnow() + timedelta(hours=12)
+    }, SECRET_KEY, algorithm="HS256")
+
+    return jsonify({
+        "mensaje": "Login exitoso",
+        "token": token,
+        "rol": user["rol"]
+    }), 200
+
+@app.route("/auth/me", methods=["GET"])
+@login_required
+def auth_me():
+
+    correo = request.user["correo"]
+    rol = request.user["rol"]
+
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+
+
+    cursor.execute("SELECT ci, nombre, apellido FROM participante WHERE email = %s", (correo,))
+    user_data = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    if not user_data:
+        return jsonify({"error": "Usuario no encontrado"}), 404
+
+    return jsonify({
+        "correo": correo,
+        "rol": rol,
+        "ci": user_data["ci"],
+        "nombre": user_data["nombre"],
+        "apellido": user_data["apellido"]
+    }), 200
+
+
+
+
+
 
 
 
