@@ -1,0 +1,48 @@
+.divMS{
+    background-color:  rgba(0, 0, 0, 0.674);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 5%;
+    border-radius: 10px;
+}
+
+.formMS{
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    background-color: transparent;
+    align-items: center;
+}
+
+input{
+    color: aliceblue;
+    background-color: transparent;
+    border: none;
+    padding: 2%;
+    font-size: 100%;
+    align-items: center;
+}
+
+.bbottonn{     
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width:220px;
+    height:60px;
+    color: aliceblue;
+    background-color: rgb(22, 59, 205);
+    border-radius: 50px;
+    font-size: 19px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none; 
+    align-self: center;
+}
+.bbottonn:active{
+    background-color: rgb(255, 0, 234);
+    box-shadow: 2px 2px 5px #22232a;
+}
+.bbottonn:hover{
+    background-color: rgb(255, 0, 234);
+}

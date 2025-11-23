@@ -1,0 +1,35 @@
+.reservas{
+   display: flex;
+   flex-direction: column; 
+   margin: 5px;
+   gap: 30px;
+   align-items: center;
+
+}
+.reservas input{
+    background-color: rgba(255, 255, 255, 0.573);
+    border-radius: 10px;
+    padding: 12px 15px;
+    border: 1px solid #ccc;
+    width: 100%;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+.reservas button{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width:220px;
+    height:60px;
+    color: aliceblue;
+    background-color: rgb(22, 59, 205);
+    border-radius: 50px;
+    font-size: 19px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+}
+.reservas button:active{
+    box-shadow: 2px 2px 5px #22232a;
+    background-color: rgb(50, 50, 255);
+}

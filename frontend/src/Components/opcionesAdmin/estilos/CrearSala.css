@@ -1,0 +1,40 @@
+.input{
+    margin-top: 50px;
+    padding: 10px; 
+    background-color: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-items: center;
+}
+.formSala{
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    background-color: rgba(0, 0, 0, 0.674);
+    padding: 30px;
+    border-radius: 15px;
+    margin-top: 50%;
+    align-items: center;
+}
+.formSala input{
+color: aliceblue;
+}
+.formSala button{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width:220px;
+    height:60px;
+    color: aliceblue;
+    background-color: rgb(22, 59, 205);
+    border-radius: 50px;
+    font-size: 19px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none; 
+}
+.formSala button:active{
+    background-color: rgb(255, 0, 234);
+    box-shadow: 2px 2px 5px #22232a;
+}

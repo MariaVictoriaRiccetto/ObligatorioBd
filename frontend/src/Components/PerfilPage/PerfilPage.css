@@ -1,0 +1,51 @@
+.hola{
+    display:flex;
+    flex-direction:column;
+    gap: 10px;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.674);
+    border-radius: 15px;
+    padding: 50px;
+    margin: 0px;
+}
+.botoncito{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width:220px;
+    height:60px;
+    color: aliceblue;
+    background-color: rgb(22, 59, 205);
+    border-radius: 50px;
+    font-size: 19px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none; 
+}
+.botoncito:active{
+    background-color: rgb(255, 0, 234);
+     box-shadow: 2px 2px 5px #22232a;
+}
+
+.tabla{
+    width: 100%; 
+    border: none;
+    padding: 10px;
+    align-items: center;
+    text-align: center;
+    background-color: rgba(1, 1, 88, 0.655);
+    border-radius: 10px;
+}
+.divTabla{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+}
+.tabla td:nth-child(even), th:nth-child(even) {
+  background-color: rgba(1, 1, 62, 0.482);
+  border-radius: 10px;
+  padding: 10px;
+  margin: 0px;
+}
